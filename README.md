@@ -1,6 +1,6 @@
 # 🏦 NitroBank: Automated Microcredit Pipeline
 
-##  Project Overview
+##  Executive Summary 
 
 
 NitroBank has decided to expand its services by offering microcredits across Brazil, Mexico and Colombia. This strategic action is a result of the transaction analysis that revealed that out of **>145K transactions** across LATAM there were 15.3K declined transactions and 89.2% of those failures were due to Insufficient Funds. By converting these failed transactions into real-time micro-loans, we don't just rescue the immediate transaction; we transform a moment of customer friction into a loyalty-building event that cements NitroBank as their **primary financial partner.** 
