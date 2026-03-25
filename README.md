@@ -1,7 +1,11 @@
 # 🏦 NitroBank: Automated Microcredit Pipeline
 
 ##  Project Overview
-As NitroBank expands its microcredit offerings across LATAM, financial integrity is paramount. This project replaces a manual SQL-based currency reconciliation process with a fully automated, cloud-native data pipeline. 
+
+
+NitroBank has decided to expand its services by offering microcredits across Brazil, Mexico and Colombia. This strategic action is a result of the transaction analysis that revealed that out of **>145K transactions** across LATAM there were 15.3K declined transactions and 89.2% of those failures were due to Insufficient Funds. By converting these failed transactions into real-time micro-loans, we don't just rescue the immediate transaction; we transform a moment of customer friction into a loyalty-building event that cements NitroBank as their **primary financial partner.** 
+
+
 
 By orchestrating the ingestion of daily exchange rates, enforcing strict data contracts, and leveraging a Medallion Architecture, this pipeline ensures downstream K-Means clustering models are fed with audit-grade, chronologically accurate financial data.
 
