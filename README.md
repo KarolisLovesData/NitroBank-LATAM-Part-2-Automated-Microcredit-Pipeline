@@ -2,9 +2,9 @@
 
 ##  Executive Summary 
 
+NitroBank is expanding its LATAM services across Brazil, Mexico, and Colombia by introducing contextual microcredits. Initial analysis of over **145k regional transactions** revealed a massive opportunity: of the **15.3k declined transactions**, a staggering **89.2% failed strictly due to Insufficient Funds**. By bridging these liquidity gaps with real-time micro-loans, we transform moments of customer friction into loyalty-building events that cement NitroBank as their primary financial partner.
 
-NitroBank has decided to expand its services by offering microcredits across Brazil, Mexico and Colombia. This strategic action is a result of the transaction analysis that revealed that out of **>145K transactions** across LATAM there were 15.3K declined transactions and 89.2% of those failures were due to Insufficient Funds. By converting these failed transactions into real-time micro-loans, we don't just rescue the immediate transaction; we transform a moment of customer friction into a loyalty-building event that cements NitroBank as their **primary financial partner.** 
-
+However, because the financial integrity of the bank is paramount, this initiative required moving beyond isolated transactions. To launch this product responsibly, I engineered a **fully automated pipeline** and **K-Means clustering model** to evaluate the financial health of our **450k** customers. By processing all customer behavior—from transaction volumes to trust metrics—the model automatically **segments users into actionable tiers**, empowering the product team to confidently offer micro-loans to the right users while upselling our healthiest spenders and protecting the bank from ghost accounts.
 
 
 By orchestrating the ingestion of daily exchange rates, enforcing strict data contracts, and leveraging a Medallion Architecture, this pipeline ensures downstream K-Means clustering models are fed with audit-grade, chronologically accurate financial data.
