@@ -6,7 +6,7 @@ As NitroBank expands its microcredit offerings across LATAM, financial integrity
 By orchestrating the ingestion of daily exchange rates, enforcing strict data contracts, and leveraging a Medallion Architecture, this pipeline ensures downstream K-Means clustering models are fed with audit-grade, chronologically accurate financial data.
 
 ## 🏗️ Architecture Flow
-*(Note: GitHub natively supports this Mermaid diagram)*
+
 
 ```mermaid
 %%{init: {
