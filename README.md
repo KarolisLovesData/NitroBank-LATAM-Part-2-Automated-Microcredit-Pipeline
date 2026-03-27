@@ -9,7 +9,7 @@ However, because the financial integrity of the bank is paramount, this initiati
 
 ## Data Pipeline Architecture
 
-![NitroBank Pipeline Architecture](Visuals/Data_pipeline_architecture.png)
+![NitroBank Pipeline Architecture](Images/Data_pipeline_architecture.png)
 
 ---
 
