@@ -6,7 +6,7 @@ NitroBank is expanding its services across LATAM by introducing **Nitro Reserve*
 
 However, because the financial integrity of the bank is paramount, this initiative required moving beyond isolated transactions. To launch this product responsibly, I engineered a **fully automated pipeline** and **K-Means clustering model** to evaluate the financial health of our **450k** customers. This architecture delivers dual business impact: First, it automatically **segments users into actionable tiers**, empowering the product team to confidently offer micro-loans while protecting the bank from ghost accounts. Second, the pipeline orchestrates its own reporting, **eliminating hours of manual data extraction** by delivering self-updating dashboards and targeted lead lists directly to credit stakeholders.
 
----
+
 
 ## Data Pipeline Architecture
 
