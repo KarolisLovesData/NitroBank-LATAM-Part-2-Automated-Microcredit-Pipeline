@@ -1,70 +1,38 @@
 # 🏦 NitroBank: Automated Microcredit Pipeline
 
-
-
 ## Executive Summary
 NitroBank is expanding its LATAM services across Brazil, Mexico, and Colombia by introducing contextual microcredits. Initial analysis of over **145k regional transactions** revealed a massive opportunity: of the **15.3k declined transactions**, a staggering **89.2%** failed strictly due to Insufficient Funds. By bridging these liquidity gaps with real-time micro-loans, we transform moments of customer friction into loyalty-building events.
 
-However, because the financial integrity of the bank is paramount, this initiative required moving beyond isolated transactions. To launch this product responsibly, I engineered a **fully automated pipeline** and **K-Means clustering model** to evaluate the financial health of our **450k** customers. This architecture delivers dual business impact: First, it automatically **segments users into actionable tiers**, empowering the product team to confidently offer micro-loans while protecting the bank from ghost accounts. Second, the pipeline orchestrates its own reporting, **eliminating hours of manual data extraction** by delivering self-updating dashboards and targeted CSV lead lists directly to marketing and credit stakeholders daily.
+However, because the financial integrity of the bank is paramount, this initiative required moving beyond isolated transactions. To launch this product responsibly, I engineered a **fully automated pipeline** and **K-Means clustering model** to evaluate the financial health of our **450k** customers. This architecture delivers dual business impact: First, it automatically **segments users into actionable tiers**, empowering the product team to confidently offer micro-loans while protecting the bank from ghost accounts. Second, the pipeline orchestrates its own reporting, **eliminating hours of manual data extraction** by delivering self-updating dashboards and targeted lead lists directly to credit stakeholders via the **NitroBank Reserve**.
 
+---
 
-By orchestrating the ingestion of daily exchange rates, enforcing strict data contracts, and leveraging a Medallion Architecture, this pipeline ensures downstream K-Means clustering models are fed with audit-grade, chronologically accurate financial data.
+## Architecture Flow
 
-##  Architecture Flow
+![NitroBank Pipeline Architecture](images/NitroBank_Microcredit_Pipeline.png)
 
-```mermaid
-%%{init: {
-  "theme": "base",
-  "themeVariables": {
-    "darkMode": true,
-    "background": "#0B0D17",
-    "primaryColor": "#5D3FD3",
-    "primaryTextColor": "#E0B0FF",
-    "lineColor": "#00F5FF",
-    "secondaryColor": "#FF3366",
-    "tertiaryColor": "#0B0D17"
-  }
-}}%%
-graph LR
-    A[Exchange API] -->|Python| B(Docker Ingestion)
-    B -->|Parquet| C[(Google Cloud Storage)]
-    C -->|Trigger| D{Databricks Engine}
-    
-    subgraph Databricks_Logic [Processing Layer]
-    D --> D1[SQL Feature Engineering]
-    D1 --> D2[K-Means Clustering]
-    end
-    
-    D2 -->|Identified Leads| E[Stakeholder Email]
+---
 
-    style B fill:#5D3FD3,stroke:#00F5FF,stroke-width:2px
-    style D fill:#00F5FF,stroke:#5D3FD3,color:#0B0D17
-    style E fill:#FF3366,stroke:#E0B0FF,stroke-width:2px
-```
-### Phase 1: Bronze Layer (Ingestion Engine)
-Securely extracted, validated, and loaded daily FX rates into the Cloud Data Lake.
-* **Data Contracts (Pydantic):** Enforced strict API schemas, failing fast on invalid payloads to prevent downstream data corruption.
-* **Columnar Optimization (Parquet):** Converted raw JSON to `.parquet` format to reduce Databricks compute costs and accelerate downstream SQL `MERGE` operations.
-* **IAM Security (GCP):** Managed programmatic access to the data lake via a strictly scoped Service Account, isolating all credentials from version control.
+## Technical Implementation & Business Value
 
-### Phase 2: Bronze Layer (Cross-Cloud Ingestion)
-Engineered a programmatic cross-cloud bridge to ingest daily data from Google Cloud Storage into an AWS-hosted Databricks environment.
-* **SDK Side-Door:** Bypassed Serverless UI restrictions by utilizing the `google-cloud-storage` Python SDK for direct, secure memory extraction.
-* **Delta Lake Landing:** Raw Parquet files are immediately converted into Databricks Delta tables, creating an ACID-compliant, version-controlled foundation.
+### Phase 1 & 2: Data Ingestion & Cross-Cloud Bridge
+To ensure the ML model evaluates customers based on accurate, real-time economic conditions, the pipeline automatically ingests daily regional FX rates.
+* **Secure Cross-Cloud Integration:** Built a programmatic bridge extracting data from Google Cloud Storage into a Databricks environment without exposing sensitive credentials.
+* **Data Integrity:** Enforced strict API schemas using Pydantic, causing the pipeline to "fail fast" on invalid payloads to prevent corrupted data from entering the bank's ecosystem.
 
-### Phase 3: Silver Layer (Feature Store Engineering)
-Transitioned to Databricks SQL to leverage Spark's distributed query engine, transforming raw tables into a unified Machine Learning Feature Store.
-* **Exact Deduplication:** Applied Window Functions (`QUALIFY ROW_NUMBER`) to ensure downstream currency normalization strictly uses the most recent exchange rates.
-* **Optimized Aggregations:** Replaced standard `CASE WHEN` logic with high-performance `COUNT_IF` and `FILTER` clauses to process hundreds of thousands of rows efficiently.
-* **Behavioral Signals:** Engineered critical trust metrics, translating raw timestamps into `time_to_value_hours` to gauge user intent.
+### Phase 3: Feature Engineering (Silver Layer)
+Raw transaction data was refined into a unified Machine Learning Feature Store, utilizing Spark's distributed query engine for high-speed processing.
+* **Behavioral Trust Signals:** Transformed raw timestamps into actionable metrics (like `time_to_value_hours`) to gauge user intent and platform reliance.
+* **Optimized Compute:** Replaced heavy, traditional SQL logic with high-performance filtering, drastically reducing the compute cost required to process hundreds of thousands of rows.
 
-### Phase 4: Gold Layer (ML Clustering & Business Logic)
-Applied PySpark MLlib to segment over 450,000 customers into actionable financial profiles without human bias.
-* **Algorithmic Fairness:** Utilized `VectorAssembler` and `StandardScaler` to prevent massive Total Payment Volumes from overpowering vital, low-integer behavioral metrics (like transaction decline counts).
-* **K-Means Segmentation:** Trained an unsupervised K-Means model (k=4) that mathematically isolated four distinct user tiers.
-* **Impact Mapping:** Mapped raw ML clusters back to SQL business tiers, successfully isolating **1,533 "Nitro Reserve" candidates**—highly engaged users averaging 4 "Insufficient Funds" declines who represent the immediate target market for micro-loans.
+### Phase 4: K-Means Clustering & Strategic Value
+Relying on manual credit checks for micro-loans is too slow to catch a user at the checkout screen. We applied an unsupervised **K-Means model (k=4)** to mathematically isolate distinct user tiers without human bias.
+
+* **Risk Mitigation:** The algorithm successfully identified and filtered out high-risk profiles, protecting the bank's assets from dormant "Ghost Accounts" and chronic defaulters.
+* **Targeted Revenue Generation:** The model pinpointed **1,533 "Nitro Reserve" candidates**. These are not just users who lack funds; they are highly engaged customers who average 4 "Insufficient Funds" declines but possess strong financial recovery signals. 
+* **Algorithmic Fairness:** Data scaling ensured that users with massive Total Payment Volumes did not mathematically overpower vital, subtle behavioral metrics, ensuring fair credit evaluation across all income brackets.
 
 ### Phase 5: Production Orchestration
-Packaged the analytical models into a production-grade data product.
-* **Automated Workflows:** Orchestrated the end-to-end Python, PySpark, and SQL pipeline using Databricks Workflows for hands-off nightly execution.
-* **Stakeholder Dashboards:** The final Gold tables feed a live Databricks SQL Dashboard, providing the product team with an automatically updating VIP list of the top 100 highest-priority credit leads.
+Packaged the analytical models into a hands-off, production-grade data product.
+* **Event-Driven Automation:** Orchestrated the end-to-end pipeline using Databricks Workflows, triggered immediately upon new data arrival in GCS.
+* **NitroBank Reserve:** The final ML outputs feed directly into the **NitroBank Reserve**, a production-ready repository that provides the product and credit teams with a daily, actionable VIP list of the top micro-loan candidates.
