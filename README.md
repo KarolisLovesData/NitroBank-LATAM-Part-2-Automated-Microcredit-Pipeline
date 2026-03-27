@@ -1,15 +1,13 @@
 # 🏦 NitroBank: Automated Microcredit Pipeline
 
+
 ## Executive Summary
-NitroBank is expanding its services across LATAM by introducing **Nitro Reserve**-contextual microcredits offerings in Brazil, Mexico and Colombia. Initial analysis of over **145k regional transactions** revealed a massive opportunity: of the **15.3k declined transactions**, a staggering **89.2%** failed strictly due to Insufficient Funds. By bridging these liquidity gaps with real-time micro-loans, we transform moments of customer friction into loyalty-building events.
+NitroBank is expanding its services across LATAM by introducing **Nitro Reserve**—contextual microcredit offerings in Brazil, Mexico, and Colombia. Initial analysis of over **145k regional transactions** revealed a massive opportunity: of the **15.3k declined transactions**, a staggering **89.2%** failed strictly due to Insufficient Funds. By bridging these liquidity gaps with real-time micro-loans, we transform moments of customer friction into loyalty-building events.
+
+However, while reacting to checkout failures is highly profitable, scaling a true credit product requires evaluating the financial health of the *entire* customer base. To launch this responsibly, I engineered a **fully automated pipeline** and a **K-Means clustering model** to evaluate all **450k+** customers. This architecture delivers massive business impact: it safely isolates our vast "Prime" user base for proactive credit offers while mathematically filtering out over **330k** ghost accounts and high-risk profiles. Furthermore, the pipeline orchestrates its own reporting, delivering self-updating dashboards directly to the credit and product teams.
 
 
-However, because the financial integrity of the bank is paramount, this initiative required moving beyond isolated transactions. To launch this product responsibly, I engineered a **fully automated pipeline** and **K-Means clustering model** to evaluate the financial health of our **450k** customers. This architecture delivers dual business impact: First, it automatically **segments users into actionable tiers**, empowering the product team to confidently offer micro-loans while protecting the bank from ghost accounts. Second, the pipeline orchestrates its own reporting, **eliminating hours of manual data extraction** by delivering self-updating dashboards and targeted lead lists directly to credit stakeholders.
-
-
-
-## Data Pipeline Architecture
-
+## Data Pipeline Architecture 
 ![NitroBank Pipeline Architecture](Images/Data_pipeline_architecture.png)
 
 ---
@@ -17,21 +15,28 @@ However, because the financial integrity of the bank is paramount, this initiati
 
 ## Technical Implementation & Business Value
 
-### Phase 1 & 2: Data Ingestion & Cross-Cloud Bridge
-To ensure the ML model evaluates customers based on accurate, real-time economic conditions, the pipeline automatically ingests daily regional FX rates.
-* **Event-Driven Automation:** Orchestrated the end-to-end pipeline using Databricks Workflows, triggered immediately upon new data arrival in GCS.
+### Phase 1 & 2: Cross-Cloud Ingestion & Dockerized Automation
+To ensure the ML model evaluates customers based on accurate, real-time economic conditions, the ingestion engine was packaged into a **Docker container deployed via Google Cloud Run**. 
+* **Event-Driven Automation:** Orchestrated the end-to-end pipeline using Databricks Workflows, triggered immediately upon new `.parquet` data arriving in GCS.
 * **Secure Cross-Cloud Integration:** Built a programmatic bridge extracting data from Google Cloud Storage into a Databricks environment without exposing sensitive credentials.
-* **Data Integrity:** Enforced strict API schemas using Pydantic, causing the pipeline to "fail fast" on invalid payloads to prevent corrupted data from entering the bank's ecosystem.
+* **Data Integrity & Schema Validation:** Enforced strict API contracts using Pydantic, causing the pipeline to "fail fast" on invalid API payloads to prevent corrupted data from entering the bank's ecosystem.
 
-### Phase 3: Feature Engineering (Silver Layer)
-Raw transaction data was refined into a unified Machine Learning Feature Store, utilizing Spark's distributed query engine for high-speed processing.
-* **Behavioral Trust Signals:** Transformed raw timestamps into actionable metrics (like `time_to_value_hours`) to gauge user intent and platform reliance.
-* **Optimized Compute:** Replaced heavy, traditional SQL logic with high-performance filtering, drastically reducing the compute cost required to process hundreds of thousands of rows.
+### Phase 3: Distributed Feature Engineering (Silver Layer)
+Raw transaction data was refined into a unified Machine Learning Feature Store, utilizing **Spark's distributed query engine** for high-speed processing.
+* **Temporal Accuracy:** Applied deduplication logic to incoming FX payloads to ensure the ML model evaluates credit limits using only the **absolute latest daily exchange rates** (Row Number = 1), preventing stale data from affecting loan calculations.
+* **Behavioral Trust Signals:** Transformed raw timestamps into actionable ML features to mathematically gauge user intent and platform reliance before offering credit.
+* **Optimized Compute:** Replaced heavy conditional logic with high-performance PySpark filtering, drastically reducing the cluster compute costs required to process hundreds of thousands of rows.
 
-### Phase 4: K-Means Clustering & Strategic Value
-Relying on manual credit checks for micro-loans is too slow to catch a user at the checkout screen. We applied an unsupervised **K-Means model (k=4)** to mathematically isolate distinct user tiers without human bias.
+### Phase 4: K-Means Clustering & Strategic Value (Gold Layer)
+Relying solely on historical transaction declines leaves massive revenue on the table. I applied an unsupervised **K-Means model (k=4)** to segment the entire customer base, identifying both immediate recovery targets and high-value candidates for credit expansion.
 
-* **Risk Mitigation:** The algorithm successfully identified and filtered out high-risk profiles, protecting the bank's assets from dormant "Ghost Accounts" and chronic defaulters.
-* **Targeted Revenue Generation:** The model pinpointed **1,533 "Nitro Reserve" candidates**. These are not just users who lack funds; they are highly engaged customers who average 4 "Insufficient Funds" declines but possess strong financial recovery signals. 
-* **Algorithmic Fairness:** Data scaling ensured that users with massive Total Payment Volumes did not mathematically overpower vital, subtle behavioral metrics, ensuring fair credit evaluation across all income brackets.
-* **NitroBank Reserve:** The final ML outputs feed directly into the **NitroBank Reserve**, a production-ready repository that provides the product and credit teams with a daily, actionable VIP list of the top micro-loan candidates.
+* **Risk Mitigation (The Shield):** The algorithm successfully walled off high-risk profiles, protecting the bank's capital from:
+    * **Tier 4: Watchlist (325,676 Ghost Accounts):** Effectively identifying dormant users.
+    * **Tier 3: Watchlist (8,088 High Risk/Fraud):** Flagging suspicious behavioral patterns.
+* **Credit Expansion (Prime Wallet):** The model unlocked **115,327 "Prime Wallet" users**. These are highly active "Whales" with healthy financial signals. Instead of waiting for a transaction failure, this segment is now targeted for proactive, higher-limit credit products.
+* **Checkout Recovery (Nitro Reserve):** Pinpointed **1,533 "Nitro Reserve" candidates**. These users possess the highest intent but frequently hit "Liquidity Walls," making them the primary targets for instant, point-of-sale micro-loans.
+
+### Phase 5: Production Orchestration & Delivery
+Packaged the analytical models into a hands-off, production-grade data product.
+* **Algorithmic Fairness:** Utilized scaling techniques within the pipeline to ensure that users with massive Total Payment Volumes did not mathematically overpower vital behavioral metrics, ensuring fair credit evaluation across all income brackets.
+* **The NitroBank Reserve:** The final ML outputs feed directly into a production-ready Databricks dashboard that provides the product and credit teams with a daily, actionable VIP list of both Prime users and immediate Micro-Loan candidates.
