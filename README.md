@@ -14,6 +14,7 @@ However, because the financial integrity of the bank is paramount, this initiati
 
 ---
 
+
 ## Technical Implementation & Business Value
 
 ### Phase 1 & 2: Data Ingestion & Cross-Cloud Bridge
