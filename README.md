@@ -9,7 +9,7 @@ However, because the financial integrity of the bank is paramount, this initiati
 
 ## Architecture Flow
 
-![NitroBank Pipeline Architecture](images/NitroBank_Microcredit_Pipeline.png)
+![NitroBank Pipeline Architecture](Visuals/Data_pipeline_architecture.png)
 
 ---
 
