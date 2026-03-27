@@ -31,11 +31,12 @@ Raw transaction data was refined into a unified Machine Learning Feature Store, 
 Relying solely on historical transaction declines leaves massive revenue on the table. I applied an unsupervised **K-Means model (k=4)** to segment the entire customer base, identifying both immediate recovery targets and high-value candidates for credit expansion.
 
 * **Risk Mitigation (The Shield):** The algorithm successfully walled off high-risk profiles, protecting the bank's capital from:
-    * **Tier 4: Watchlist (325,676 Ghost Accounts):** Effectively identifying dormant users.
-    * **Tier 3: Watchlist (8,088 High Risk/Fraud):** Flagging suspicious behavioral patterns.
-* **Credit Expansion (Prime Wallet):** The model unlocked **115,327 "Prime Wallet" users**. These are highly active "Whales" with healthy financial signals. Instead of waiting for a transaction failure, this segment is now targeted for proactive, higher-limit credit products.
-* **Checkout Recovery (Nitro Reserve):** Pinpointed **1,533 "Nitro Reserve" candidates**. These users possess the highest intent but frequently hit "Liquidity Walls," making them the primary targets for instant, point-of-sale micro-loans.
+    * **Tier 4: Watchlist (~313k Ghost Accounts):** Effectively identifying dormant users.
+    * **Tier 3: Watchlist (~13k High Risk/Fraud):** Flagging suspicious behavioral patterns.
+* **Credit Expansion (Prime Wallet):** The model unlocked **~123k "Prime Wallet" users**. These are highly active "Whales" with healthy financial signals. Instead of waiting for a transaction failure, this segment is now targeted for proactive, higher-limit credit products.
+* **Checkout Recovery (Nitro Reserve):** Pinpointed **~1.5k "Nitro Reserve" candidates**. These users possess the highest intent but frequently hit "Liquidity Walls," making them the primary targets for instant, point-of-sale micro-loans.
 
+  
 ### Phase 5: Production Orchestration & Delivery
 Packaged the analytical models into a hands-off, production-grade data product.
 * **Algorithmic Fairness:** Utilized scaling techniques within the pipeline to ensure that users with massive Total Payment Volumes did not mathematically overpower vital behavioral metrics, ensuring fair credit evaluation across all income brackets.
