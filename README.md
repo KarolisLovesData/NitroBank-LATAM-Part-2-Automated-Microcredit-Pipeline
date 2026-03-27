@@ -7,7 +7,7 @@ However, because the financial integrity of the bank is paramount, this initiati
 
 ---
 
-## Architecture Flow
+## Data Pipeline Architecture
 
 ![NitroBank Pipeline Architecture](Visuals/Data_pipeline_architecture.png)
 
