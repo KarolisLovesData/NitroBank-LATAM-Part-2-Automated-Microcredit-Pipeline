@@ -41,3 +41,21 @@ Relying solely on historical transaction declines leaves massive revenue on the 
 Packaged the analytical models into a hands-off, production-grade data product.
 * **Algorithmic Fairness:** Utilized scaling techniques within the pipeline to ensure that users with massive Total Payment Volumes did not mathematically overpower vital behavioral metrics, ensuring fair credit evaluation across all income brackets.
 * **The NitroBank Reserve:** The final ML outputs feed directly into a production-ready Databricks dashboard that provides the product and credit teams with a daily, actionable VIP list of both Prime users and immediate Micro-Loan candidates.
+
+
+## Challenges & Roadblocks
+
+### 1. Compute Bottlenecks & The Cartesian "Fan-Out" Bug
+* **The Challenge:** Extracting user behavior features required joining our core `users` table with massive, high-velocity `transactions` and `events` tables.
+* **The Roadblock:** Joining two separate 1-to-many tables simultaneously created a Cartesian multiplier effect (artificially inflating financial aggregates). Furthermore, running this heavy query dynamically for every ML iteration skyrocketed cloud compute costs.
+* **The Solution:** I overhauled the SQL architecture using CTEs to pre-aggregate the tables individually, eliminating the fan-out bug. I then decoupled this process into a daily scheduled job that materializes the data into a static `user_ml_features` table, slashing ML compute costs and optimizing for enterprise scale.
+
+### 2. Cloud Identity & Security (IAM)
+* **The Challenge:** Transitioning the pipeline from local development to a fully automated, secure Google Cloud deployment.
+* **The Roadblock:** The default Cloud Run environment lacked the necessary identity tokens, resulting in immediate `PERMISSION_DENIED` errors when attempting to access Cloud Storage and trigger Databricks.
+* **The Solution:** Conducted an IAM audit and implemented a custom GCP Service Account utilizing the **Principle of Least Privilege**. I also wrote hybrid authentication logic in Python to seamlessly switch between local developer keys and GCP's internal metadata service without hardcoding credentials.
+
+### 3. Containerization & Dependency Resolution
+* **The Challenge:** Ensuring the data transformation logic executed identically in the cloud as it did on my local machine.
+* **The Roadblock:** Cloud buildpacks initially defaulted to an unstable Python runtime (breaking validation libraries like `pydantic`), and silent container crashes occurred because Pandas lacked the underlying C++ engine (`pyarrow`) required to write Parquet files.
+* **The Solution:** Authored a strict `Dockerfile` to pin a stable Python runtime (`v3.9-slim`) and explicitly defined all required data-engineering libraries in the dependency manifest. This ensured deterministic, reproducible builds and prevented silent pipeline failures.
