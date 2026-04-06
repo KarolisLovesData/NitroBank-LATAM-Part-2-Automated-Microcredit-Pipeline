@@ -32,9 +32,9 @@ Relying solely on historical transaction declines leaves massive revenue on the 
 
 * **Risk Mitigation (The Shield):** The algorithm successfully walled off high-risk profiles, protecting the bank's capital from:
     * **Tier 4: Watchlist (~313k Ghost Accounts):** Effectively identifying dormant users.
-    * **Tier 3: Watchlist (~1,5k High Risk/Fraud):** Flagging suspicious behavioral patterns.
+    * **Tier 3: Watchlist (~1.5k High Risk/Fraud):** Flagging suspicious behavioral patterns.
 * **Credit Expansion (Prime Wallet):** The model unlocked **~123k "Prime Wallet" users**. These are highly active "Whales" with healthy financial signals. Instead of waiting for a transaction failure, this segment is now targeted for proactive, higher-limit credit products.
-* **Checkout Recovery (Nitro Reserve):** Pinpointed **~13,4k "Nitro Reserve" candidates**. These users possess the highest intent but frequently hit "Liquidity Walls," making them the primary targets for instant, point-of-sale micro-loans.
+* **Checkout Recovery (Nitro Reserve):** Pinpointed **~13.4k "Nitro Reserve" candidates**. These users possess the highest intent but frequently hit "Liquidity Walls," making them the primary targets for instant, point-of-sale micro-loans.
 
   
 ### Phase 5: Production Orchestration & Delivery
