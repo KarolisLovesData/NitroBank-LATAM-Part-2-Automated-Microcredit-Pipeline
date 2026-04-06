@@ -28,19 +28,22 @@ Raw transaction data was refined into a unified Machine Learning Feature Store, 
 * **Optimized Compute:** Replaced heavy conditional logic with high-performance PySpark filtering, drastically reducing the cluster compute costs required to process hundreds of thousands of rows.
 
 ### Phase 4: K-Means Clustering & Strategic Value (Gold Layer)
-Relying solely on historical transaction declines leaves massive revenue on the table. I applied an unsupervised **K-Means model (k=4)** to segment the entire customer base, identifying both immediate recovery targets and high-value candidates for credit expansion.
+Relying solely on historical transaction declines leaves massive revenue on the table. I applied an unsupervised **PySpark K-Means model (k=4)** to segment the entire 450k+ customer base, identifying both immediate recovery targets and high-value candidates for credit expansion. 
+
+To prevent "label inversion" caused by the non-deterministic nature of K-Means (where arbitrary cluster IDs change on every run), I engineered a **Defensive SQL Profiling** step. By dynamically calculating the mathematical centroid of each cluster, the pipeline accurately mapped actual behavioral averages to business logic:
 
 * **Risk Mitigation (The Shield):** The algorithm successfully walled off high-risk profiles, protecting the bank's capital from:
-    * **Tier 4: Watchlist (~313k Ghost Accounts):** Effectively identifying dormant users.
-    * **Tier 3: Watchlist (~1.5k High Risk/Fraud):** Flagging suspicious behavioral patterns.
-* **Credit Expansion (Prime Wallet):** The model unlocked **~123k "Prime Wallet" users**. These are highly active "Whales" with healthy financial signals. Instead of waiting for a transaction failure, this segment is now targeted for proactive, higher-limit credit products.
-* **Checkout Recovery (Nitro Reserve):** Pinpointed **~13.4k "Nitro Reserve" candidates**. These users possess the highest intent but frequently hit "Liquidity Walls," making them the primary targets for instant, point-of-sale micro-loans.
+  * **Tier 4: Watchlist (~312k Ghost Accounts):** Zero financial footprint ($0 TPV); effectively identifying dormant users for re-engagement or deprecation.
+  * **Tier 3: Watchlist (~1.5k High Risk/Fraud):** Flagging suspicious behavioral patterns (moving large volumes averaging $579 TPV, but with highly anomalous, slow Time-To-Value).
+* **Credit Expansion (Prime Wallet):** The model unlocked **~123k "Prime Wallet" users**. Averaging $476 in volume with fast activation times, these are highly active "Whales" with healthy financial signals. Instead of waiting for a transaction failure, this segment is proactively targeted for higher-limit credit products.
+* **Checkout Recovery (Nitro Reserve):** Pinpointed **~13.3k "Nitro Reserve" candidates**. Averaging small basket sizes (~$20 TPV) but exactly ~1.0 decline per user, these profiles possess the highest intent but frequently hit "Liquidity Walls," making them the primary targets for instant, point-of-sale micro-loans.
 
-  
 ### Phase 5: Production Orchestration & Delivery
-Packaged the analytical models into a hands-off, production-grade data product.
-* **Algorithmic Fairness:** Utilized scaling techniques within the pipeline to ensure that users with massive Total Payment Volumes did not mathematically overpower vital behavioral metrics, ensuring fair credit evaluation across all income brackets.
-* **The NitroBank Reserve:** The final ML outputs feed directly into a production-ready Databricks dashboard that provides the product and credit teams with a daily, actionable VIP list of both Prime users and immediate Micro-Loan candidates.
+Packaged the analytical models and defensive SQL logic into a hands-off, production-grade data product.
+
+* **Algorithmic Fairness:** Utilized scaling techniques within the pipeline to ensure that users with massive Total Payment Volumes did not mathematically overpower vital behavioral metrics (like decline velocity), ensuring fair credit evaluation across all income brackets.
+* **Deterministic Automation:** The defensive SQL CTEs automatically re-evaluate the ML centroids after every daily run, guaranteeing that the business tier labels remain 100% accurate regardless of arbitrary algorithm state changes.
+* **The NitroBank Reserve:** The final automated Gold Layer feeds directly into a production-ready Databricks dashboard, providing the product and credit teams with a daily, actionable VIP list of both Prime users and immediate Micro-Loan candidates.
 
 
 ### Challenges & Roadblocks
