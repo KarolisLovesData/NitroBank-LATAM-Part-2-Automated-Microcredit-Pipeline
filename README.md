@@ -56,6 +56,6 @@ Packaged the analytical models into a hands-off, production-grade data product.
 * **The Solution:** Conducted an IAM audit and implemented a custom GCP Service Account utilizing the **Principle of Least Privilege**. I also wrote hybrid authentication logic in Python to seamlessly switch between local developer keys and GCP's internal metadata service without hardcoding credentials.
 
 ### 3. Containerization & Dependency Resolution
-* **The Challenge:** Ensuring the data transformation logic executed identically in the cloud as it did on my local machine.
+* **The Challenge:** Ensuring the data transformation logic executed deterministically across both local development and cloud production environments.
 * **The Roadblock:** Cloud buildpacks initially defaulted to an unstable Python runtime (breaking validation libraries like `pydantic`), and silent container crashes occurred because Pandas lacked the underlying C++ engine (`pyarrow`) required to write Parquet files.
 * **The Solution:** Authored a strict `Dockerfile` to pin a stable Python runtime (`v3.9-slim`) and explicitly defined all required data-engineering libraries in the dependency manifest. This ensured deterministic, reproducible builds and prevented silent pipeline failures.
