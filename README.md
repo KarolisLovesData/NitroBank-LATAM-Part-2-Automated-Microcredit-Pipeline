@@ -43,19 +43,19 @@ Packaged the analytical models into a hands-off, production-grade data product.
 * **The NitroBank Reserve:** The final ML outputs feed directly into a production-ready Databricks dashboard that provides the product and credit teams with a daily, actionable VIP list of both Prime users and immediate Micro-Loan candidates.
 
 
-## Challenges & Roadblocks
+### Challenges & Roadblocks
 
-### 1. Compute Bottlenecks & The Cartesian "Fan-Out" Bug
+#### 1. Compute Bottlenecks & The Cartesian "Fan-Out" Bug
 * **The Challenge:** Extracting user behavior features required joining our core `users` table with massive, high-velocity `transactions` and `events` tables.
 * **The Roadblock:** Joining two separate 1-to-many tables simultaneously created a Cartesian multiplier effect (artificially inflating financial aggregates). Furthermore, running this heavy query dynamically for every ML iteration skyrocketed cloud compute costs.
 * **The Solution:** I overhauled the SQL architecture using CTEs to pre-aggregate the tables individually, eliminating the fan-out bug. I then decoupled this process into a daily scheduled job that materializes the data into a static `user_ml_features` table, slashing ML compute costs and optimizing for enterprise scale.
 
-### 2. Cloud Identity & Security (IAM)
+#### 2. Cloud Identity & Security (IAM)
 * **The Challenge:** Transitioning the pipeline from local development to a fully automated, secure Google Cloud deployment.
 * **The Roadblock:** The default Cloud Run environment lacked the necessary identity tokens, resulting in immediate `PERMISSION_DENIED` errors when attempting to access Cloud Storage and trigger Databricks.
 * **The Solution:** Conducted an IAM audit and implemented a custom GCP Service Account utilizing the **Principle of Least Privilege**. I also wrote hybrid authentication logic in Python to seamlessly switch between local developer keys and GCP's internal metadata service without hardcoding credentials.
 
-### 3. Containerization & Dependency Resolution
-* **The Challenge:** Ensuring the data transformation logic executed deterministically across both local development and cloud production environments.
-* **The Roadblock:** Cloud buildpacks initially defaulted to an unstable Python runtime (breaking validation libraries like `pydantic`), and silent container crashes occurred because Pandas lacked the underlying C++ engine (`pyarrow`) required to write Parquet files.
-* **The Solution:** Authored a strict `Dockerfile` to pin a stable Python runtime (`v3.9-slim`) and explicitly defined all required data-engineering libraries in the dependency manifest. This ensured deterministic, reproducible builds and prevented silent pipeline failures.
+#### 3. Unsupervised ML & Non-Deterministic Outputs (K-Means)
+* **The Challenge:** Translating unsupervised machine learning mathematical outputs into actionable, real-world business tiers (e.g., "Prime", "High-Risk", "Micro-Loan Candidates").
+* **The Roadblock:** K-Means cluster IDs (0, 1, 2, 3) are non-deterministic and arbitrary. Initially, I hardcoded my business logic directly to these IDs (`CASE WHEN prediction = 0 THEN 'Prime'`). Because the algorithm randomizes cluster starting points, this caused an inversion bug where "Ghost Accounts" were falsely flagged as high-value users.
+* **The Solution:** Implemented SQL-based **Cluster Profiling** over the ML outputs to mathematically calculate the centroids of each group. By aggregating and analyzing the true averages (Avg TPV, decline velocity, time-to-value), I was able to accurately map the underlying behavioral data to the correct business definitions, eliminating prediction blindness.
