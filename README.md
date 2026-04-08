@@ -19,28 +19,26 @@ This **Machine Learning-driven architecture** safely isolates our vast **123k "P
 
 ## Technical Implementation & Business Value
 
-### Phase 1 & 2: Cross-Cloud Ingestion & Dockerized Automation
-To ensure the ML model evaluates customers based on accurate, real-time economic conditions, the ingestion engine was packaged into a **Docker container deployed via Google Cloud Run**. 
-* **Event-Driven Automation:** Orchestrated the end-to-end pipeline using Databricks Workflows, triggered immediately upon new `.parquet` data arriving in GCS.
-* **Secure Cross-Cloud Integration:** Built a programmatic bridge extracting data from Google Cloud Storage into a Databricks environment without exposing sensitive credentials.
-* **Data Integrity & Schema Validation:** Enforced strict API contracts using Pydantic, causing the pipeline to "fail fast" on invalid API payloads to prevent corrupted data from entering the bank's ecosystem.
+### Phase 1 & 2: Automated Cross-Cloud Ingestion Pipeline
+To ensure the ML model evaluates customers based on up-to-date economic conditions, I architected a decoupled, two-stage ingestion pipeline bridging Google Cloud and Databricks.
+* **Scheduled Containerized Ingestion:** Utilized **GCP Cloud Scheduler** to trigger a **Dockerized Google Cloud Run** instance, routinely fetching and writing fresh financial payloads to Cloud Storage as compressed `.parquet` files.
+* **Event-Driven Orchestration:** Built a Python-triggered job that automatically wakes the **Databricks Engine** the moment new Parquet data arrives in GCS, ensuring seamless cross-cloud integration with zero idle compute time.
+* **Data Integrity & Schema Validation:** Enforced strict API contracts at the Cloud Run layer using **Pydantic**, causing the ingestion to "fail fast" on invalid payloads before they could enter the downstream Databricks environment.
 
 ### Phase 3: Distributed Feature Engineering & ML Store (Silver Layer)
 Raw transaction and event data were transformed into a materialized **Machine Learning Feature Store** using Spark SQL. Instead of feeding raw logs to the model, I pre-aggregated specific financial and behavioral KPIs to serve as objective inputs for the K-Means algorithm:
 * **Dynamic FX Normalization (`total_payment_volume_usd`):** Applied deduplication logic to incoming FX payloads and joined point-in-time exchange rates. This ensures the ML model evaluates cross-border credit limits equitably, preventing stale data from skewing loan caps.
-* **Risk vs. Liquidity Profiling (`insufficient_funds_count` & `high_risk_decline_count`):** segmented and separated users who need micro-loans from those exhibiting fraudulent, high-risk decline patterns.
+* **Risk vs. Liquidity Profiling (`insufficient_funds_count` & `high_risk_decline_count`):** Replaced heavy conditional logic with Spark's high-performance `COUNT_IF` function to strictly differentiate users who need micro-loans from those exhibiting fraudulent, high-risk decline patterns.
 * **Behavioral Trust Signals (`time_to_value_hours`):** Transformed raw timestamps into a continuous metric measuring the hours between account creation and first successful payment. This acts as a mathematical proxy for user intent and platform reliance.
-* **Engagement Baselines (`total_app_events` & `successful_txn_count`):** Pre-aggregated total frontend events alongside approved transactions to establish a baseline of user activity before any credit extension.
-### Phase 4: K-Means Clustering & Business Value (Gold Layer)
-Relying solely on historical transaction declines leaves massive revenue on the table. I applied an unsupervised **PySpark K-Means model (k=4)** to segment the entire 450k+ customer base, identifying both immediate recovery targets and high-value candidates for credit expansion. 
+* **Algorithmic Fairness (Feature Scaling):** Applied strict mathematical scaling techniques before modeling to ensure users with massive transaction volumes did not geometrically overpower vital behavioral signals (like decline velocity), guaranteeing fair credit evaluation across all income brackets.
 
-To prevent "label inversion" caused by the non-deterministic nature of K-Means (where arbitrary cluster IDs change on every run), I engineered a **Defensive SQL Profiling** step. By dynamically calculating the mathematical centroid of each cluster, the pipeline accurately mapped actual behavioral averages to business logic:
+### Phase 4: K-Means Clustering & Business ROI (Gold Layer)
+To translate raw data into direct financial impact, I deployed a distributed **PySpark K-Means model (k=4)** to autonomously segment the 450k+ customer base. By evaluating complex behavioral signals, the pipeline transformed the user base into a four-tiered strategy designed to maximize revenue generation while protecting bank capital:
 
-* **Risk Mitigation (The Shield):** The algorithm successfully walled off high-risk profiles, protecting the bank's capital from:
-  * **Tier 4: Watchlist (~312k Ghost Accounts):** Zero financial footprint ($0 TPV); effectively identifying dormant users for re-engagement or deprecation.
-  * **Tier 3: Watchlist (~1.5k High Risk/Fraud):** Flagging suspicious behavioral patterns (moving large volumes averaging $579 TPV, but with highly anomalous, slow Time-To-Value).
-* **Credit Expansion (Prime Wallet):** The model unlocked **~123k "Prime Wallet" users**. Averaging $476 in volume with fast activation times, these are highly active "Whales" with healthy financial signals. Instead of waiting for a transaction failure, this segment is proactively targeted for higher-limit credit products.
-* **Checkout Recovery (Nitro Reserve):** Pinpointed **~13.3k "Nitro Reserve" candidates**. Averaging small basket sizes (~$20 TPV) but exactly ~1.0 decline per user, these profiles possess the highest intent but frequently hit "Liquidity Walls," making them the primary targets for instant, point-of-sale micro-loans.
+* **Revenue Generation: Proactive Credit (Prime Wallet):** The model unlocked **~123k "Prime Wallet"** users. Averaging $476 in transaction volume with fast activation times, these highly active profiles represent the core profit engine. By proactively offering higher-limit credit products *before* a failure occurs, the business drives massive top-line growth and increased Customer Lifetime Value (LTV).
+* **Immediate ROI: Checkout Recovery (Nitro Reserve):** Pinpointed **~13.3k "Nitro Reserve"** candidates. Averaging small basket sizes (~$20 TPV) but experiencing exactly ~1.0 decline per user, these profiles possess high intent but frequently hit "Liquidity Walls." Targeting them with instant, point-of-sale micro-loans directly recovers lost checkout revenue that would otherwise be permanently abandoned.
+* **Capital Protection: Fraud & Risk Mitigation:** Safely walled off **~1.5k High-Risk** profiles. By flagging users attempting to move large volumes (averaging $579 TPV) but exhibiting anomalous, delayed Time-To-Value, the pipeline proactively shields the bank from high-impact fraud, defaults, and chargeback losses.
+* **OpEx Reduction: Ghost Accounts:** Identified **~312k dormant users** with zero financial footprint ($0 TPV). Isolating these accounts allows the business to safely deprecate inactive cohorts, optimizing database compute costs and ensuring marketing spend is never wasted on non-viable users.
 
 ### Phase 5: Production Orchestration & Delivery
 Packaged the analytical models and defensive SQL logic into a hands-off, production-grade data product.
