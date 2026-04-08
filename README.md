@@ -40,13 +40,6 @@ To translate raw data into direct financial impact, I deployed a distributed **P
 * **Capital Protection: Fraud & Risk Mitigation:** Safely walled off **~1.5k High-Risk** profiles. By flagging users attempting to move large volumes (averaging $579 TPV) but exhibiting anomalous, delayed Time-To-Value, the pipeline proactively shields the bank from high-impact fraud, defaults, and chargeback losses.
 * **OpEx Reduction: Ghost Accounts:** Identified **~312k dormant users** with zero financial footprint ($0 TPV). Isolating these accounts allows the business to safely deprecate inactive cohorts, optimizing database compute costs and ensuring marketing spend is never wasted on non-viable users.
 
-### Phase 5: Production Orchestration & Delivery
-Packaged the analytical models and defensive SQL logic into a hands-off, production-grade data product.
-
-* **Algorithmic Fairness:** Utilized scaling techniques within the pipeline to ensure that users with massive Total Payment Volumes did not mathematically overpower vital behavioral metrics (like decline velocity), ensuring fair credit evaluation across all income brackets.
-* **Deterministic Automation:** The defensive SQL CTEs automatically re-evaluate the ML centroids after every daily run, guaranteeing that the business tier labels remain 100% accurate regardless of arbitrary algorithm state changes.
-* **The NitroBank Reserve:** The final automated Gold Layer feeds directly into a production-ready Databricks dashboard, providing the product and credit teams with a daily, actionable VIP list of both Prime users and immediate Micro-Loan candidates.
-
 
 ### Challenges & Roadblocks
 
