@@ -8,10 +8,9 @@ NitroBank is expanding its services across LATAM by introducing **Nitro Reserve*
 While reacting to checkout failures is highly profitable, scaling a true enterprise credit product requires evaluating the financial health of the **entire** customer base, not just reacting to drop-offs.
 
 ### The Engineering Solution and Business Impact
-To launch this responsibly, I engineered a **fully automated pipeline** and a **K-Means clustering model** to evaluate all **450k+ customers**.
-This architecture safely isolates our vast **123k "Prime"** user base for proactive credit offers while mathematically filtering out over **313k ghost accounts** and high-risk profiles. Furthermore, the pipeline orchestrates its own reporting, delivering self-updating dashboards directly to the credit and product teams.
+To enable safe, enterprise-scale credit expansion, I engineered a **fully automated pipeline** powered by **K-Means Clustering (an Unsupervised Machine Learning model)** to evaluate all **450k+ customers**. This enables the system to objectively segment the user base by evaluating multiple financial behaviors simultaneously, replacing the need for rigid, manual SQL rules.
 
-
+This **Machine Learning-driven architecture** safely isolates our vast **123k "Prime"** user base for proactive credit offers while mathematically filtering out over **313k ghost accounts** and high-risk profiles. Furthermore, the pipeline orchestrates its own reporting, delivering self-updating dashboards directly to the credit and product teams.
 ## Data Pipeline Architecture 
 ![NitroBank Pipeline Architecture](Images/Data_pipeline_architecture.png)
 
@@ -26,12 +25,12 @@ To ensure the ML model evaluates customers based on accurate, real-time economic
 * **Secure Cross-Cloud Integration:** Built a programmatic bridge extracting data from Google Cloud Storage into a Databricks environment without exposing sensitive credentials.
 * **Data Integrity & Schema Validation:** Enforced strict API contracts using Pydantic, causing the pipeline to "fail fast" on invalid API payloads to prevent corrupted data from entering the bank's ecosystem.
 
-### Phase 3: Distributed Feature Engineering (Silver Layer)
-Raw transaction data was refined into a unified Machine Learning Feature Store, utilizing **Spark's distributed query engine** for high-speed processing.
-* **Temporal Accuracy:** Applied deduplication logic to incoming FX payloads to ensure the ML model evaluates credit limits using only the **absolute latest daily exchange rates** (Row Number = 1), preventing stale data from affecting loan calculations.
-* **Behavioral Trust Signals:** Transformed raw timestamps into actionable ML features to mathematically gauge user intent and platform reliance before offering credit.
-* **Optimized Compute:** Replaced heavy conditional logic with high-performance PySpark filtering, drastically reducing the cluster compute costs required to process hundreds of thousands of rows.
-
+### Phase 3: Distributed Feature Engineering & ML Store (Silver Layer)
+Raw transaction and event data were transformed into a materialized **Machine Learning Feature Store** using Spark SQL. Instead of feeding raw logs to the model, I pre-aggregated specific financial and behavioral KPIs to serve as objective inputs for the K-Means algorithm:
+* **Dynamic FX Normalization (`total_payment_volume_usd`):** Applied deduplication logic to incoming FX payloads and joined point-in-time exchange rates. This ensures the ML model evaluates cross-border credit limits equitably, preventing stale data from skewing loan caps.
+* **Risk vs. Liquidity Profiling (`insufficient_funds_count` & `high_risk_decline_count`):** segmented and separated users who need micro-loans from those exhibiting fraudulent, high-risk decline patterns.
+* **Behavioral Trust Signals (`time_to_value_hours`):** Transformed raw timestamps into a continuous metric measuring the hours between account creation and first successful payment. This acts as a mathematical proxy for user intent and platform reliance.
+* **Engagement Baselines (`total_app_events` & `successful_txn_count`):** Pre-aggregated total frontend events alongside approved transactions to establish a baseline of user activity before any credit extension.
 ### Phase 4: K-Means Clustering & Business Value (Gold Layer)
 Relying solely on historical transaction declines leaves massive revenue on the table. I applied an unsupervised **PySpark K-Means model (k=4)** to segment the entire 450k+ customer base, identifying both immediate recovery targets and high-value candidates for credit expansion. 
 
