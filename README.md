@@ -27,7 +27,7 @@ Raw transaction data was refined into a unified Machine Learning Feature Store, 
 * **Behavioral Trust Signals:** Transformed raw timestamps into actionable ML features to mathematically gauge user intent and platform reliance before offering credit.
 * **Optimized Compute:** Replaced heavy conditional logic with high-performance PySpark filtering, drastically reducing the cluster compute costs required to process hundreds of thousands of rows.
 
-### Phase 4: K-Means Clustering & Strategic Value (Gold Layer)
+### Phase 4: K-Means Clustering & Business Value (Gold Layer)
 Relying solely on historical transaction declines leaves massive revenue on the table. I applied an unsupervised **PySpark K-Means model (k=4)** to segment the entire 450k+ customer base, identifying both immediate recovery targets and high-value candidates for credit expansion. 
 
 To prevent "label inversion" caused by the non-deterministic nature of K-Means (where arbitrary cluster IDs change on every run), I engineered a **Defensive SQL Profiling** step. By dynamically calculating the mathematical centroid of each cluster, the pipeline accurately mapped actual behavioral averages to business logic:
