@@ -26,6 +26,9 @@ To ensure the ML model evaluates customers based on up-to-date economic conditio
 * **Data Integrity & Schema Validation:** Enforced strict API contracts at the Cloud Run layer using **Pydantic**, causing the ingestion to "fail fast" on invalid payloads before they could enter the downstream Databricks environment.
 
 ### Phase 3: Distributed Feature Engineering & ML Store (Silver Layer)
+
+<img src="Images/data_lineage_graph.png" width="700">
+
 Raw transaction and event data were transformed into a materialized **Machine Learning Feature Store** using Spark SQL. Instead of feeding raw logs to the model, I pre-aggregated specific financial and behavioral KPIs to serve as objective inputs for the K-Means algorithm:
 * **Dynamic FX Normalization (`total_payment_volume_usd`):** Applied deduplication logic to incoming FX payloads and joined point-in-time exchange rates. This ensures the ML model evaluates cross-border credit limits equitably, preventing stale data from skewing loan caps.
 * **Risk vs. Liquidity Profiling (`insufficient_funds_count` & `high_risk_decline_count`):** Replaced heavy conditional logic with Spark's high-performance `COUNT_IF` function to strictly differentiate users who need micro-loans from those exhibiting fraudulent, high-risk decline patterns.
@@ -48,12 +51,14 @@ To translate raw data into direct financial impact, I deployed a distributed **P
 * **The Roadblock:** Joining two separate 1-to-many tables simultaneously created a Cartesian multiplier effect (artificially inflating financial aggregates). Furthermore, running this heavy query dynamically for every ML iteration skyrocketed cloud compute costs.
 * **The Solution:** I overhauled the SQL architecture using CTEs to pre-aggregate the tables individually, eliminating the fan-out bug. I then decoupled this process into a daily scheduled job that materializes the data into a static `user_ml_features` table, slashing ML compute costs and optimizing for enterprise scale.
 
-#### 2. Cloud Identity & Security (IAM)
+#### 2. Unsupervised ML & Non-Deterministic Outputs (K-Means)
+* **The Challenge:** Translating unsupervised machine learning mathematical outputs into actionable, real-world business tiers (e.g., "Prime", "High-Risk", "Micro-Loan Candidates").
+* **The Roadblock:** K-Means cluster IDs (0, 1, 2, 3) are non-deterministic and arbitrary. Initially, I hardcoded my business logic directly to these IDs (`CASE WHEN prediction = 0 THEN 'Prime'`). Because the algorithm randomizes cluster starting points, this caused an inversion bug where "Ghost Accounts" were falsely flagged as high-value users.
+* **The Solution:** Implemented SQL-based **Cluster Profiling** over the ML outputs to mathematically calculate the centroids of each group. By aggregating and analyzing the true averages (Avg TPV, decline velocity, time-to-value), I was able to accurately map the underlying behavioral data to the correct business definitions, eliminating prediction blindness.
+
+#### 3. Cloud Identity & Security (IAM)
 * **The Challenge:** Transitioning the pipeline from local development to a fully automated, secure Google Cloud deployment.
 * **The Roadblock:** The default Cloud Run environment lacked the necessary identity tokens, resulting in immediate `PERMISSION_DENIED` errors when attempting to access Cloud Storage and trigger Databricks.
 * **The Solution:** Conducted an IAM audit and implemented a custom GCP Service Account utilizing the **Principle of Least Privilege**. I also wrote hybrid authentication logic in Python to seamlessly switch between local developer keys and GCP's internal metadata service without hardcoding credentials.
 
-#### 3. Unsupervised ML & Non-Deterministic Outputs (K-Means)
-* **The Challenge:** Translating unsupervised machine learning mathematical outputs into actionable, real-world business tiers (e.g., "Prime", "High-Risk", "Micro-Loan Candidates").
-* **The Roadblock:** K-Means cluster IDs (0, 1, 2, 3) are non-deterministic and arbitrary. Initially, I hardcoded my business logic directly to these IDs (`CASE WHEN prediction = 0 THEN 'Prime'`). Because the algorithm randomizes cluster starting points, this caused an inversion bug where "Ghost Accounts" were falsely flagged as high-value users.
-* **The Solution:** Implemented SQL-based **Cluster Profiling** over the ML outputs to mathematically calculate the centroids of each group. By aggregating and analyzing the true averages (Avg TPV, decline velocity, time-to-value), I was able to accurately map the underlying behavioral data to the correct business definitions, eliminating prediction blindness.
+
