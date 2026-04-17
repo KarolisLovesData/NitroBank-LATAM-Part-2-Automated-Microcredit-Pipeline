@@ -78,7 +78,7 @@ if __name__ == "__main__":   #Used to ensure that the code only runs when this s
     filename = f"fx_rates_{today}.parquet"
     bucket_name = os.getenv("GCP_BUCKET_NAME")
     
-    print("   Starting NitroBank Ingestion!  ")
+    print("--------Starting NitroBank Ingestion!--------  ")
     
     try:
         raw_data = fetch_latam_rates()
