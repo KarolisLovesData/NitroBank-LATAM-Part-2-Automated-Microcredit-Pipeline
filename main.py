@@ -9,13 +9,13 @@ from dotenv import load_dotenv
 # Load the variables from the .env file
 load_dotenv()
 
-#Used Pydantic to verify data integrity before it even touches my datalake/gt=0 ensures no negative or 0 FX rates
+# Used Pydantic to verify data integrity before it even touches my datalake
 class CurrencyRate(BaseModel):
     base_currency: str = "USD"
     target_currency: str
     rate: float = Field(gt=0)
 
-    @field_validator('target_currency')  # 4. Changed from @validator
+    @field_validator('target_currency')  
     @classmethod
     def validate_currency_code(cls, v):
         return v.upper()
@@ -36,7 +36,7 @@ def fetch_latam_rates():
     return validated_data
 
 def upload_to_gcs(local_path, bucket_name):
-    # Added check for keys.json to support both local and cloud
+    # Added check for keys.json to support both local and cloud code deployment 
     if os.path.exists('keys.json'):
         client = storage.Client.from_service_account_json('keys.json')
     else:
@@ -63,7 +63,7 @@ def trigger_databricks_workflow():
         "Content-Type": "application/json"
     }
     
-    print(f"🚀 Signaling Databricks Job {job_id}...")
+    print(f" Signaling Databricks Job {job_id}...")
     response = requests.post(endpoint, headers=headers, json={"job_id": job_id})
 
     if response.status_code == 200:
