@@ -1,5 +1,7 @@
 # 🏦 NitroBank: Automated Microcredit Pipeline
 
+[🌐 Click here to view the live Streamlit App](your-url-here)
+
 #### Note: This is a comprehensive portfolio project utilizing a simulated enterprise dataset. The metrics, company names, and financial figures were constructed to demonstrate production-grade Analytics Engineering, Medallion Architecture, and business-focused data modeling.
 ### The Business Opportunity
 NitroBank is expanding its services across LATAM by introducing **Nitro Reserve**—contextual microcredit offerings in Brazil, Mexico, and Colombia. Initial analysis of over **145k regional transactions** revealed a massive opportunity: of the **15.3k declined transactions**, a staggering **89.2%** failed strictly due to **Insufficient Funds**. By bridging these liquidity gaps with real-time micro-loans, we transform moments of customer friction into loyalty-building events.
@@ -44,25 +46,21 @@ To translate raw data into direct financial impact, I deployed a distributed **P
 * **OpEx Reduction: Ghost Accounts:** Identified **~312k dormant users** with zero financial footprint ($0 TPV). Isolating these accounts allows the business to safely deprecate inactive cohorts, optimizing database compute costs and ensuring marketing spend is never wasted on non-viable users.
 
 ### Phase 5: Real-Time BI & Executive Serving Layer
-* **Deployed a Real-Time BI Application:** Built an interactive serving layer using Streamlit and Plotly to democratize K-Means ML outputs for non-technical stakeholders.
-* **Eliminated Data Silos:** Connected the application directly to Databricks Delta Gold tables, providing credit and product teams with a live visual pulse of portfolio tier distributions.
-* **Operationalized ML Intelligence:** Engineered a real-time "Credit Advisor Simulator" that instantly evaluates new customer eligibility, bridging the gap between backend analytics and frontend business decisions.
+* **Deployed a Real-Time BI Application:** Built an interactive serving layer using **Streamlit** and **Plotly** to democratize K-Means ML outputs for non-technical stakeholders.
+* **Eliminated Data Silos:** Connected the application directly to **Databricks Delta Gold** tables, providing credit and product teams with a live visual pulse of portfolio tier distributions.
+* **Operationalized ML Intelligence:** Engineered a real-time **Credit Advisor Simulator** that instantly evaluates new customer eligibility, bridging the gap between backend analytics and frontend business decisions.
 
 ### Challenges & Roadblocks
 
-#### 1. Compute Bottlenecks & The Cartesian "Fan-Out" Bug
-* **The Challenge:** Extracting user behavior features required joining our core `users` table with massive, high-velocity `transactions` and `events` tables.
-* **The Roadblock:** Joining two separate 1-to-many tables simultaneously created a Cartesian multiplier effect (artificially inflating financial aggregates). Furthermore, running this heavy query dynamically for every ML iteration skyrocketed cloud compute costs.
-* **The Solution:** I overhauled the SQL architecture using CTEs to pre-aggregate the tables individually, eliminating the fan-out bug. I then decoupled this process into a daily scheduled job that materializes the data into a static `user_ml_features` table, slashing ML compute costs and optimizing for enterprise scale.
+#### 1. Compute Bottlenecks & The Cartesian "Fan-Out"
+* **The Challenge:** Joining our core `users` table with high-velocity `transactions` and `events` tables simultaneously created a Cartesian multiplier, inflating financial metrics and skyrocketing ML compute costs.
+* **The Solution:** Refactored the SQL architecture using CTEs to pre-aggregate the tables individually. I decoupled this into a daily scheduled job that materializes a static `user_ml_features` table, eliminating the fan-out bug and slashing enterprise compute costs.
 
-#### 2. Unsupervised ML & Non-Deterministic Outputs (K-Means)
-* **The Challenge:** Translating unsupervised machine learning mathematical outputs into actionable, real-world business tiers (e.g., "Prime", "High-Risk", "Micro-Loan Candidates").
-* **The Roadblock:** K-Means cluster IDs (0, 1, 2, 3) are non-deterministic and arbitrary. Initially, I hardcoded my business logic directly to these IDs (`CASE WHEN prediction = 0 THEN 'Prime'`). Because the algorithm randomizes cluster starting points, this caused an inversion bug where "Ghost Accounts" were falsely flagged as high-value users.
-* **The Solution:** Implemented SQL-based **Cluster Profiling** over the ML outputs to mathematically calculate the centroids of each group. By aggregating and analyzing the true averages (Avg TPV, decline velocity, time-to-value), I was able to accurately map the underlying behavioral data to the correct business definitions, eliminating prediction blindness.
+#### 2. Taming Non-Deterministic ML Outputs (K-Means)
+* **The Challenge:** K-Means randomizes cluster starting points, causing arbitrary, shifting IDs (0, 1, 2, 3) that broke hardcoded business rules and falsely flagged "Ghost" accounts as "Prime" users.
+* **The Solution:** Developed SQL-based **Cluster Profiling** to calculate true centroids post-prediction. By analyzing behavioral averages (Avg TPV, decline velocity), I dynamically mapped the arbitrary ML outputs to concrete business tiers, eliminating prediction blindness.
 
 #### 3. Cloud Identity & Security (IAM)
-* **The Challenge:** Transitioning the pipeline from local development to a fully automated, secure Google Cloud deployment.
-* **The Roadblock:** The default Cloud Run environment lacked the necessary identity tokens, resulting in immediate `PERMISSION_DENIED` errors when attempting to access Cloud Storage and trigger Databricks.
-* **The Solution:** Conducted an IAM audit and implemented a custom GCP Service Account utilizing the **Principle of Least Privilege**. I also wrote hybrid authentication logic in Python to seamlessly switch between local developer keys and GCP's internal metadata service without hardcoding credentials.
-
+* **The Challenge:** Transitioning to automated Google Cloud deployments caused immediate `PERMISSION_DENIED` errors when accessing storage or triggering Databricks due to default environment limits.
+* **The Solution:** Deployed a custom GCP Service Account enforcing the **Principle of Least Privilege**. Engineered Python hybrid-auth logic to seamlessly toggle between local developer keys and GCP's metadata service without hardcoding credentials.
 
