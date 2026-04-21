@@ -43,6 +43,10 @@ To translate raw data into direct financial impact, I deployed a distributed **P
 * **Capital Protection: Fraud & Risk Mitigation:** Safely walled off **~1.5k High-Risk** profiles. By flagging users attempting to move large volumes (averaging $579 TPV) but exhibiting anomalous, delayed Time-To-Value, the pipeline proactively shields the bank from high-impact fraud, defaults, and chargeback losses.
 * **OpEx Reduction: Ghost Accounts:** Identified **~312k dormant users** with zero financial footprint ($0 TPV). Isolating these accounts allows the business to safely deprecate inactive cohorts, optimizing database compute costs and ensuring marketing spend is never wasted on non-viable users.
 
+### Phase 5: Real-Time BI & Executive Serving Layer
+* **Deployed a Real-Time BI Application:** Built an interactive serving layer using Streamlit and Plotly to democratize K-Means ML outputs for non-technical stakeholders.
+* **Eliminated Data Silos:** Connected the application directly to Databricks Delta Gold tables, providing credit and product teams with a live visual pulse of portfolio tier distributions.
+* **Operationalized ML Intelligence:** Engineered a real-time "Credit Advisor Simulator" that instantly evaluates new customer eligibility, bridging the gap between backend analytics and frontend business decisions.
 
 ### Challenges & Roadblocks
 
