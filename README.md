@@ -53,13 +53,13 @@ To translate raw data into direct financial impact, I deployed a distributed **P
 
 ### Challenges & Roadblocks
 
-#### 1. Compute Bottlenecks & The Cartesian "Fan-Out"
-* **The Challenge:** Joining our core `users` table with high-velocity `transactions` and `events` tables simultaneously created a Cartesian multiplier, inflating financial metrics and skyrocketing ML compute costs.
-* **The Solution:** Refactored the SQL architecture using CTEs to pre-aggregate the tables individually. I decoupled this into a daily scheduled job that materializes a static `user_ml_features` table, eliminating the fan-out bug and slashing enterprise compute costs.
-
-#### 2. Taming Non-Deterministic ML Outputs (K-Means)
+#### 1. Taming Non-Deterministic ML Outputs (K-Means)
 * **The Challenge:** K-Means randomizes cluster starting points, causing arbitrary, shifting IDs (0, 1, 2, 3) that broke hardcoded business rules and falsely flagged "Ghost" accounts as "Prime" users.
 * **The Solution:** Developed SQL-based **Cluster Profiling** to calculate true centroids post-prediction. By analyzing behavioral averages (Avg TPV, decline velocity), I dynamically mapped the arbitrary ML outputs to concrete business tiers, eliminating prediction blindness.
+
+#### 2. Compute Bottlenecks & The Cartesian "Fan-Out"
+* **The Challenge:** Joining our core `users` table with high-velocity `transactions` and `events` tables simultaneously created a Cartesian multiplier, inflating financial metrics and skyrocketing ML compute costs.
+* **The Solution:** Refactored the SQL architecture using CTEs to pre-aggregate the tables individually. I decoupled this into a daily scheduled job that materializes a static `user_ml_features` table, eliminating the fan-out bug and slashing enterprise compute costs.
 
 #### 3. Cloud Identity & Security (IAM)
 * **The Challenge:** Transitioning to automated Google Cloud deployments caused immediate `PERMISSION_DENIED` errors when accessing storage or triggering Databricks due to default environment limits.
