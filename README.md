@@ -53,9 +53,11 @@ To translate raw data into direct financial impact, I deployed a distributed **P
 
 ### Challenges & Roadblocks
 
-#### 1. Taming Non-Deterministic ML Outputs (K-Means)
-* **The Challenge:** K-Means randomizes cluster starting points, causing arbitrary, shifting IDs (0, 1, 2, 3) that broke hardcoded business rules and falsely flagged "Ghost" accounts as "Prime" users.
-* **The Solution:** Developed SQL-based **Cluster Profiling** to calculate true centroids post-prediction. By analyzing behavioral averages (Avg TPV, decline velocity), I dynamically mapped the arbitrary ML outputs to concrete business tiers, eliminating prediction blindness.
+### 3. Mitigating Economic Volatility in Credit Risk Models
+
+**The Challenge (Business Risk):** Operating in LATAM requires managing rapid **macroeconomic volatility**. Because the current clustering model evaluates users on absolute **Total Payment Volume (TPV)**, a sudden inflation spike artificially inflates nominal spend. This **concept drift** risks incorrectly promoting standard users to the **"Prime" credit tier**, exposing the bank to **underpriced credit risk** and capital loss.
+
+**Proposed Architectural Update:** To protect bank capital, I propose integrating a **rolling 30-day macroeconomic index** directly into the **Silver Layer**. By **normalizing absolute TPV** against this index *before* it reaches the ML algorithms or BI dashboards, the segmentation will dynamically adapt to market realities. This ensures the model maintains **accurate risk profiles** and prevents drift, regardless of economic turbulence.
 
 #### 2. Compute Bottlenecks & The Cartesian "Fan-Out"
 * **The Challenge:** Joining our core `users` table with high-velocity `transactions` and `events` tables simultaneously created a Cartesian multiplier, inflating financial metrics and skyrocketing ML compute costs.
