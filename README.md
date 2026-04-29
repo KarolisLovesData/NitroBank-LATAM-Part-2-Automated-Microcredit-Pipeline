@@ -31,7 +31,7 @@ To ensure the ML model evaluates customers based on up-to-date economic conditio
 
 <img src="Images/data_lineage_graph.png" width="700">
 
-Transformed raw event data into a materialized **Machine Learning Feature Store** using Spark SQL. To provide the K-Means algorithm with clean, objective inputs, I pre-aggregated key financial and behavioral KPIs:
+To provide the K-Means algorithm with clean, objective inputs, I pre-aggregated key financial and behavioral KPIs into **user feature table**.
 
 * **Dynamic FX Normalization (`total_payment_volume_usd`):** Deduplicated incoming FX payloads and joined point-in-time exchange rates. This prevents stale data from skewing loan caps and ensures cross-border credit is evaluated equitably.
 * **Risk vs. Liquidity Profiling (`insufficient_funds_count` & `high_risk_decline_count`):** Utilized Spark's high-performance `COUNT_IF` to efficiently separate users who need liquidity bridging from those exhibiting fraudulent decline patterns.
@@ -39,7 +39,7 @@ Transformed raw event data into a materialized **Machine Learning Feature Store*
 * **Algorithmic Fairness (Feature Scaling):** Scaled inputs before modeling so massive transaction volumes couldn't geometrically overpower nuanced behavioral signals (like decline velocity), guaranteeing fair credit evaluation across all income brackets.
 
 ### Phase 4: K-Means Clustering & Business ROI (Gold Layer)
-To translate raw data into direct financial impact, I deployed a distributed **PySpark K-Means model (k=4)** to autonomously segment the 450k+ customer base. By evaluating complex behavioral signals, the pipeline transformed the user base into a four-tiered strategy designed to maximize revenue generation while protecting bank capital:
+Deployed a distributed **PySpark K-Means model (k=4)** to autonomously segment the 450k+ customer base. By evaluating complex behavioral signals, the pipeline transformed the user base into a **four-tiered** strategy designed to maximize revenue generation while protecting bank capital:
 
 * **Revenue Generation (Prime Wallet):** Unlocked **~123k** highly active users averaging $476 TPV. Proactively offering this core profit engine higher-limit credit *before* a failure occurs drives massive top-line growth and Customer Lifetime Value (LTV).
 * **Immediate ROI (Nitro Reserve):** Pinpointed **~13.3k** high-intent users hitting "liquidity walls" (~$20 TPV, ~1.0 decline/user). Deploying instant, point-of-sale micro-loans to this cohort directly recovers abandoned checkout revenue.
