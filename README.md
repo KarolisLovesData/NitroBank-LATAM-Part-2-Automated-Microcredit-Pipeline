@@ -31,10 +31,10 @@ To ensure the ML model evaluates customers based on up-to-date economic conditio
 
 <img src="Images/data_lineage_graph.png" width="700">
 
-To provide the K-Means algorithm with clean, objective inputs, I pre-aggregated key financial and behavioral KPIs into **user feature table**.
+To provide the PySpark K-Means algorithm with clean, one-row-per-user inputs, I pre-aggregated key financial and behavioral KPIs using SQL. 
 
 * **Dynamic FX Normalization (`total_payment_volume_usd`):** Deduplicated incoming FX payloads and joined point-in-time exchange rates. This prevents stale data from skewing loan caps and ensures cross-border credit is evaluated equitably.
-* **Risk vs. Liquidity Profiling (`insufficient_funds_count` & `high_risk_decline_count`):** Utilized Spark's high-performance `COUNT_IF` to efficiently separate users who need liquidity bridging from those exhibiting fraudulent decline patterns.
+* **Risk vs. Liquidity Profiling (`insufficient_funds_count` & `high_risk_decline_count`):** Utilized Databricks high-performance `COUNT_IF` to efficiently separate users who need liquidity bridging from those exhibiting fraudulent decline patterns.
 * **Behavioral Trust Signals (`time_to_value_hours`):** Converted raw timestamps into a continuous metric (hours from account creation to first payment) to mathematically proxy user intent and platform reliance.
 * **Algorithmic Fairness (Feature Scaling):** Scaled inputs before modeling so massive transaction volumes couldn't geometrically overpower nuanced behavioral signals (like decline velocity), guaranteeing fair credit evaluation across all income brackets.
 
