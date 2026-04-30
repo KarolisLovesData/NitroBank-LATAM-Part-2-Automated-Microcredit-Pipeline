@@ -51,19 +51,23 @@ Deployed a distributed **PySpark K-Means model (k=4)** to autonomously segment t
 * **Eliminated Data Silos:** Connected the application directly to **Databricks Delta Gold** tables, providing credit and product teams with a live visual pulse of portfolio tier distributions.
 * **Operationalized ML Intelligence:** Engineered a real-time **Credit Advisor Simulator** that instantly evaluates new customer eligibility, bridging the gap between backend analytics and frontend business decisions.
 
+
+
+
 ### Challenges & Roadblocks
 
-### 3. Mitigating Economic Volatility in Credit Risk Models
+#### 1. Translating Non-Deterministic ML Outputs into Business Logic
+* **The Challenge:** Unsupervised K-Means outputs arbitrary, non-deterministic cluster IDs (0, 1, 2) that shuffle between runs, breaking downstream BI dashboards and automated credit logic.
+* **The Solution:** Engineered a dynamic SQL profiling step in the Gold Layer to calculate the mathematical centroid of each cluster (Avg TPV, declines, TTV). By evaluating these centroids against business guardrails using `CASE WHEN` logic, the pipeline automatically translates random ML outputs into deterministic, stable labels (e.g., "Prime Wallet") for the reporting layer.
 
-**The Challenge (Business Risk):** Operating in LATAM requires managing rapid **macroeconomic volatility**. Because the current clustering model evaluates users on absolute **Total Payment Volume (TPV)**, a sudden inflation spike artificially inflates nominal spend. This **concept drift** risks incorrectly promoting standard users to the **"Prime" credit tier**, exposing the bank to **underpriced credit risk** and capital loss.
+#### 2. Mitigating Economic Volatility in Credit Risk Models
 
-**Proposed Architectural Update:** To protect bank capital, I propose integrating a **rolling 30-day macroeconomic index** directly into the **Silver Layer**. By **normalizing absolute TPV** against this index *before* it reaches the ML algorithms or BI dashboards, the segmentation will dynamically adapt to market realities. This ensures the model maintains **accurate risk profiles** and prevents drift, regardless of economic turbulence.
+* **The Challenge (Business Risk):** Operating in LATAM requires managing rapid **macroeconomic volatility**. Because the current clustering model evaluates users on absolute **Total Payment Volume (TPV)**, a sudden inflation spike artificially inflates nominal spend. This **concept drift** risks incorrectly promoting standard users to the **"Prime" credit tier**, exposing the bank to **underpriced credit risk** and capital loss.
+* **Proposed Architectural Update:** To protect bank capital, I propose integrating a **rolling 30-day macroeconomic index** directly into the **Silver Layer**. By **normalizing absolute TPV** against this index *before* it reaches the ML algorithms or BI dashboards, the segmentation will dynamically adapt to market realities. This ensures the model maintains **accurate risk profiles** and prevents drift, regardless of economic turbulence.
 
-#### 2. Compute Bottlenecks & The Cartesian "Fan-Out"
+#### 3. Compute Bottlenecks & The Cartesian "Fan-Out"
 * **The Challenge:** Joining our core `users` table with high-velocity `transactions` and `events` tables simultaneously created a Cartesian multiplier, inflating financial metrics and skyrocketing ML compute costs.
 * **The Solution:** Refactored the SQL architecture using CTEs to pre-aggregate the tables individually. I decoupled this into a daily scheduled job that materializes a static `user_ml_features` table, eliminating the fan-out bug and slashing enterprise compute costs.
 
-#### 3. Cloud Identity & Security (IAM)
-* **The Challenge:** Transitioning to automated Google Cloud deployments caused immediate `PERMISSION_DENIED` errors when accessing storage or triggering Databricks due to default environment limits.
-* **The Solution:** Deployed a custom GCP Service Account enforcing the **Principle of Least Privilege**. Engineered Python hybrid-auth logic to seamlessly toggle between local developer keys and GCP's metadata service without hardcoding credentials.
+
 
