@@ -17,7 +17,14 @@ from databricks import sql
 import plotly.express as px
 import os
 
-# 1. PAGE SETUP & ICON (Improvement 6 Applied)
+# ==========================================
+# CONFIGURATION: SWITCH BETWEEN MODES HERE
+# ==========================================
+# Set to True for the "Blazing Fast" portfolio experience
+# Set to False to use the live Databricks Lakehouse connection
+USE_CSV_MODE = True
+
+# 1. PAGE SETUP & ICON
 st.set_page_config(
     page_title="Executive Pulse",
     page_icon=":material/monitoring:",
@@ -25,10 +32,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-
-# 2. DATA ENGINE (Databricks Connection)
+# 2. DATA ENGINE: METHOD A (Databricks Connection)
 @st.cache_data(ttl=600)
 def fetch_lakehouse_data(query_string):
+    """Original method for live production environments."""
     try:
         conn = sql.connect(
             server_hostname=st.secrets["DATABRICKS_HOST"],
@@ -42,21 +49,52 @@ def fetch_lakehouse_data(query_string):
         conn.close()
         return dataframe
     except Exception as e:
-        st.error(f"Connection Failed: {e}")
+        st.error(f"Databricks Connection Failed: {e}")
         return pd.DataFrame()
 
+# 2. DATA ENGINE: METHOD B (Local CSV Snapshot)
+@st.cache_data
+def fetch_csv_data():
+    """High-performance method for portfolio showcase."""
+    try:
+        # Assumes executive_pulse_data.csv is in the same folder as main.py
+        csv_path = os.path.join(os.path.dirname(__file__), "executive_pulse_data.csv")
+        dataframe = pd.read_csv(csv_path)
+        return dataframe
+    except Exception as e:
+        st.error(f"CSV Loading Failed: {e}")
+        return pd.DataFrame()
 
-# 3. HEADER & LOGO
+# 3. THE DATA PIPELINE WRAPPER
+def run_data_pipeline():
+    """
+    Orchestrates the data flow.
+    Toggle USE_CSV_MODE at the top of the file to switch sources.
+    """
+    if USE_CSV_MODE:
+        return fetch_csv_data()
+    else:
+        # This query utilizes Window Functions for optimized aggregation
+        DATA_QUERY = """
+            SELECT DISTINCT
+                credit_product_tier AS RawName,
+                COUNT(*) OVER (PARTITION BY credit_product_tier) AS Count,
+                COUNT(*) OVER () AS total_customers,
+                AVG(total_payment_volume_usd) OVER () AS global_avg_tpv
+            FROM gold_user_credit_tiers
+        """
+        return fetch_lakehouse_data(DATA_QUERY)
+
+# 4. HEADER & LOGO
 logo_col, title_col = st.columns(2)
 
 with logo_col:
-    # This guarantees Streamlit looks in the exact same folder as this Python file
     logo_path = os.path.join(os.path.dirname(__file__), "nitrobank_logo.png")
     try:
         st.image(logo_path, width=200)
     except Exception:
         st.markdown("<h2 style='color:#00F5FF; margin-top:0;'>🏦 NITRO</h2>", unsafe_allow_html=True)
-        st.error("Could not find 'nitrobank_logo.png'. Check spelling!")
+        st.error("Could not find 'nitrobank_logo.png'.")
 
 with title_col:
     st.markdown("""
@@ -66,27 +104,18 @@ with title_col:
         </div>
     """, unsafe_allow_html=True)
 
-# Fetch aggregated data from Delta Gold Table
-DATA_QUERY = """
-             WITH GlobalStats AS (SELECT COUNT(*) as total_customers, AVG(total_payment_volume_usd) as global_avg_tpv \
-                                  FROM gold_user_credit_tiers),
-                  TierStats AS (SELECT credit_product_tier as RawName, COUNT(*) as Count \
-                                FROM gold_user_credit_tiers \
-                                GROUP BY credit_product_tier)
-             SELECT t.RawName, t.Count, g.total_customers, g.global_avg_tpv
-             FROM TierStats t \
-                      CROSS JOIN GlobalStats g \
-             """
-df = fetch_lakehouse_data(DATA_QUERY)
+# EXECUTE PIPELINE
+df = run_data_pipeline()
 
 if not df.empty:
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 4. KPI ROW
+    # 5. KPI ROW
     c1, c2, c3, c4 = st.columns(4)
 
-    total_cust = int(df['total_customers'].iloc[0]) if 'total_customers' in df.columns and not df.empty else 0
-    avg_tpv_val = float(df['global_avg_tpv'].iloc[0]) if 'global_avg_tpv' in df.columns and not df.empty else 0
+    # Note: Using .iloc[0] because these global stats are repeated in the aggregated rows
+    total_cust = int(df['total_customers'].iloc[0]) if 'total_customers' in df.columns else 0
+    avg_tpv_val = float(df['global_avg_tpv'].iloc[0]) if 'global_avg_tpv' in df.columns else 0
 
     with c1:
         with st.container(border=True):
@@ -97,7 +126,7 @@ if not df.empty:
     with c3:
         with st.container(border=True):
             st.metric(label="📡 System Health", value="Optimal")
-            st.caption("🟢 Status: Active & Routing")
+            st.caption(f"🟢 Status: {'CSV Snapshot' if USE_CSV_MODE else 'Live Lakehouse'}")
     with c4:
         with st.container(border=True):
             st.metric(label="🌎 Market", value="LATAM")
@@ -105,22 +134,16 @@ if not df.empty:
 
     st.divider()
 
-    # 5. ANALYTICS & SIMULATOR
+    # 6. ANALYTICS & SIMULATOR
     left_col, right_col = st.columns(2)
 
     with left_col:
         st.markdown("<h3 style='color: #5D3FD3;'>📊 Portfolio Tier Distribution</h3>", unsafe_allow_html=True)
 
-        nitro_palette = {
-            'Prime': '#00F5FF',
-            'Nitro Reserve': '#5D3FD3',
-            'Risk': '#E0B0FF',
-            'Ghost': '#FF3366'
-        }
+        nitro_palette = {'Prime': '#00F5FF', 'Nitro Reserve': '#5D3FD3', 'Risk': '#E0B0FF', 'Ghost': '#FF3366'}
 
         if 'RawName' in df.columns:
             plot_df = df[['RawName', 'Count']].copy()
-
 
             def get_clean_tier(raw_str):
                 val = str(raw_str).lower()
@@ -130,76 +153,53 @@ if not df.empty:
                 if 'ghost' in val or 'tier 4' in val: return 'Ghost'
                 return str(raw_str)
 
-
             plot_df['Tier'] = plot_df['RawName'].apply(get_clean_tier)
             plot_df['Label'] = plot_df['Count'].apply(lambda x: f"{x / 1000:.0f}k" if x >= 1000 else str(x))
 
             fig = px.bar(
-                plot_df,
-                x='Count',
-                y='Tier',
-                orientation='h',
-                color='Tier',
-                color_discrete_map=nitro_palette,
-                text='Label',
-                template="plotly_dark"
+                plot_df, x='Count', y='Tier', orientation='h',
+                color='Tier', color_discrete_map=nitro_palette,
+                text='Label', template="plotly_dark"
             )
 
-            fig.update_traces(
-                textposition='outside',
-                textfont=dict(size=16, color='white'),
-                marker_cornerradius=15,
-                cliponaxis=False
-            )
-
+            fig.update_traces(textposition='outside', marker_cornerradius=15)
             fig.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                showlegend=False,
-                xaxis=dict(showticklabels=False, showgrid=False, zeroline=False, title=None),
-                yaxis=dict(
-                    categoryorder='total ascending',
-                    title=None,
-                    gridcolor='rgba(255,255,255,0.05)',
-                    tickfont=dict(size=18, color='white')
-                ),
+                plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+                showlegend=False, xaxis=dict(showticklabels=False, showgrid=False),
+                yaxis=dict(categoryorder='total ascending', title=None, tickfont=dict(size=18, color='white')),
                 margin=dict(l=10, r=80, t=10, b=10)
             )
             st.plotly_chart(fig, use_container_width=True)
 
         with st.expander("ℹ️ Understanding Portfolio Tiers"):
-            st.markdown(f"""
-            <div style="line-height: 1.8;">
-                <p><strong style="color:#00F5FF;">Prime:</strong> <span style="color:white;">High value clients (Total Payment Volume > $1000) with near-zero declines. These are the bank's most stable revenue assets.</span></p>
-                <p><strong style="color:#5D3FD3;">Nitro Reserve:</strong> <span style="color:white;">Active users utilizing micro-credit to bridge liquidity. High growth potential with a solid repayment history.</span></p>
-                <p><strong style="color:#E0B0FF;">Risk:</strong> <span style="color:white;">Users showing signs of financial stress with frequent insufficient fund declines. Requires strict monitoring.</span></p>
-                <p><strong style="color:#FF3366;">Ghost:</strong> <span style="color:white;">Inactive accounts or users with insufficient data to establish a risk profile.</span></p>
-            </div>
+            st.markdown("""
+                <p><strong style="color:#00F5FF;">Prime:</strong> High value clients with near-zero declines.</p>
+                <p><strong style="color:#5D3FD3;">Nitro Reserve:</strong> Active users utilizing micro-credit to bridge liquidity.</p>
             """, unsafe_allow_html=True)
-        with right_col:
-            # Icon and Title in one clean line, no divider/underline
-            st.markdown("<h3 style='color: #5D3FD3;'>💳 Credit Advisor Simulator</h3>", unsafe_allow_html=True)
-            st.write("Determine product eligibility based on real-time performance.")
 
-            # Simulator fields placed side-by-side
-            sim_col1, sim_col2 = st.columns(2)
+    with right_col:
+        st.markdown("<h3 style='color: #5D3FD3;'>💳 Credit Advisor Simulator</h3>", unsafe_allow_html=True)
+        st.write("Determine product eligibility based on performance.")
 
-            with sim_col1:
-                input_tpv = st.number_input("Enter Total Payment Volume (USD)", min_value=0.0, value=0.0, step=10.0)
-            with sim_col2:
-                input_dec = st.number_input("Enter Historical Declines (0 to 5)", min_value=0, max_value=5, value=0,
-                                            step=1)
+        sim_col1, sim_col2 = st.columns(2)
+        with sim_col1:
+            input_tpv = st.number_input("Enter Total Payment Volume (USD)", min_value=0.0, value=0.0, step=10.0)
+        with sim_col2:
+            input_dec = st.number_input("Enter Historical Declines (0 to 5)", min_value=0, max_value=5, value=0)
 
-            # If you also want to remove the line between the inputs and the result,
-            # delete or comment out the line below in your script:
-            # st.markdown("---")
-
-            if input_tpv >= 400 and input_dec <= 1:
-                st.success("🏆 **Approved for Prime Credit**")
-            elif input_tpv >= 200 and input_dec <= 5:
-                st.warning("⚡ **Approved for Nitro Micro-Credit**")
-            else:
-                st.error("🚫 **Credit Restricted**")
-
+        # Logic engine
+        if input_tpv == 0:
+            st.info("👻 **Ghost Account Detected**")
+            st.caption("Criteria: No transaction history found.")
+        elif input_tpv >= 400 and input_dec == 0:
+            st.success("🏆 **Approved for Prime Credit**")
+            st.caption("Criteria: High Volume & Zero Risk Profile")
+        elif input_tpv >= 300 and input_dec <= 2:
+            st.warning("⚡ **Approved for Nitro Micro-Credit**")
+            st.caption("Criteria: Emerging User & Managed Risk")
+        else:
+            st.error("🚫 **Credit Restricted**")
+            st.caption("Criteria: Insufficient Volume or High Decline Rate")
 else:
+    st.info("Awaiting connection to Data Pipeline...")
     st.info("Awaiting connection to Databricks Lakehouse...")
