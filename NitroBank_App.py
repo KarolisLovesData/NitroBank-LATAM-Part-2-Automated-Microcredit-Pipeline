@@ -1,3 +1,16 @@
+"""
+NITROBANK EXECUTIVE PULSE: LATAM MICROCREDIT DASHBOARD
+------------------------------------------------------
+PURPOSE: Provides real-time segmentation of microcredit portfolios 
+         across Brazil, Mexico, and Colombia.
+TECH STACK: Streamlit, Databricks (Delta Lake), Plotly Express.
+KEY FEATURES: 
+    - Automated Portfolio Tiering (Prime, Nitro, Risk, Ghost)
+    - Live KPI Monitoring from Databricks Gold Tables
+    - Real-time Credit Advisor Simulator
+"""
+
+
 import streamlit as st
 import pandas as pd
 from databricks import sql
@@ -189,3 +202,4 @@ if not df.empty:
             st.caption("Criteria: Insufficient Volume or High Decline Rate")
 else:
     st.info("Awaiting connection to Data Pipeline...")
+    st.info("Awaiting connection to Databricks Lakehouse...")
