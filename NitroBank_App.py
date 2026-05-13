@@ -1,24 +1,12 @@
-"""
-NITROBANK EXECUTIVE PULSE: LATAM MICROCREDIT DASHBOARD
-------------------------------------------------------
-PURPOSE: Provides real-time segmentation of microcredit portfolios
-         across Brazil, Mexico, and Colombia.
-TECH STACK: Streamlit, Databricks (Delta Lake), Plotly Express.
-KEY FEATURES:
-    - Automated Portfolio Tiering (Prime, Nitro, Risk, Ghost)
-    - Live KPI Monitoring from Databricks Gold Tables
-    - Real-time Credit Advisor Simulator
-"""
-
 import streamlit as st
 import pandas as pd
 from databricks import sql
 import plotly.express as px
 import os
 
-# ------------------------------------------
+# ==========================================
 # CONFIGURATION: SWITCH BETWEEN MODES HERE
-# ------------------------------------------
+# ==========================================
 # Set to True for the "Blazing Fast" portfolio experience
 # Set to False to use the live Databricks Lakehouse connection
 USE_CSV_MODE = True
@@ -30,7 +18,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-
 
 # 2. DATA ENGINE: METHOD A (Databricks Connection)
 @st.cache_data(ttl=600)
@@ -52,7 +39,6 @@ def fetch_lakehouse_data(query_string):
         st.error(f"Databricks Connection Failed: {e}")
         return pd.DataFrame()
 
-
 # 2. DATA ENGINE: METHOD B (Local CSV Snapshot)
 @st.cache_data
 def fetch_csv_data():
@@ -65,7 +51,6 @@ def fetch_csv_data():
     except Exception as e:
         st.error(f"CSV Loading Failed: {e}")
         return pd.DataFrame()
-
 
 # 3. THE DATA PIPELINE WRAPPER
 def run_data_pipeline():
@@ -86,7 +71,6 @@ def run_data_pipeline():
             FROM gold_user_credit_tiers
         """
         return fetch_lakehouse_data(DATA_QUERY)
-
 
 # 4. HEADER & LOGO
 logo_col, title_col = st.columns(2)
@@ -116,22 +100,24 @@ if not df.empty:
     # 5. KPI ROW
     c1, c2, c3, c4 = st.columns(4)
 
-    total_cust = int(df['total_customers'].iloc[0]) if 'total_customers' in df.columns and not df.empty else 0
-    avg_tpv_val = float(df['global_avg_tpv'].iloc[0]) if 'global_avg_tpv' in df.columns and not df.empty else 0
+    # Note: Using .iloc[0] because these global stats are repeated in the aggregated rows
+    total_cust = int(df['total_customers'].iloc[0]) if 'total_customers' in df.columns else 0
+    avg_tpv_val = float(df['global_avg_tpv'].iloc[0]) if 'global_avg_tpv' in df.columns else 0
 
     with c1:
         with st.container(border=True):
-            st.metric(label="👥 Total Registered Customers", value=f"{total_cust:,}")
+            st.metric(label="👥 Total Customers", value=f"{total_cust:,}")
     with c2:
         with st.container(border=True):
-            st.metric(label="💸 Avg Total Payment Volume (USD)", value=f"${avg_tpv_val:,.2f}")
+            st.metric(label="💸 Avg TPV (USD)", value=f"${avg_tpv_val:,.2f}")
     with c3:
         with st.container(border=True):
-            st.metric(label="📡 System Health", value="Optimal", delta="Active")
+            st.metric(label="📡 System Health", value="Optimal")
+            st.caption(f"🟢 Status: {'CSV Snapshot' if USE_CSV_MODE else 'Live Lakehouse'}")
     with c4:
         with st.container(border=True):
-            st.metric(label="🌎 Operating Market", value="LATAM")
-            st.caption("📍 Brazil / Mexico / Colombia")
+            st.metric(label="🌎 Market", value="LATAM")
+            st.caption("📍 BR / MX / CO")
 
     st.divider()
 
@@ -139,14 +125,12 @@ if not df.empty:
     left_col, right_col = st.columns(2)
 
     with left_col:
-        st.markdown("<h3 style='color: #5D3FD3;'>👥 Customer Distribution by Risk Segmentation</h3>",
-                    unsafe_allow_html=True)
+        st.markdown("<h3 style='color: #5D3FD3;'>📊 Portfolio Tier Distribution</h3>", unsafe_allow_html=True)
 
         nitro_palette = {'Prime': '#00F5FF', 'Nitro Reserve': '#5D3FD3', 'Risk': '#E0B0FF', 'Ghost': '#FF3366'}
 
         if 'RawName' in df.columns:
             plot_df = df[['RawName', 'Count']].copy()
-
 
             def get_clean_tier(raw_str):
                 val = str(raw_str).lower()
@@ -155,7 +139,6 @@ if not df.empty:
                 if 'risk' in val or 'tier 3' in val: return 'Risk'
                 if 'ghost' in val or 'tier 4' in val: return 'Ghost'
                 return str(raw_str)
-
 
             plot_df['Tier'] = plot_df['RawName'].apply(get_clean_tier)
             plot_df['Label'] = plot_df['Count'].apply(lambda x: f"{x / 1000:.0f}k" if x >= 1000 else str(x))
@@ -166,30 +149,20 @@ if not df.empty:
                 text='Label', template="plotly_dark"
             )
 
-            fig.update_traces(
-                textposition='outside',
-                marker_cornerradius=15,
-                textfont=dict(size=18, color='white'),
-                cliponaxis=False
-            )
+            fig.update_traces(textposition='outside', marker_cornerradius=15)
             fig.update_layout(
                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-                showlegend=False,
-                xaxis=dict(showticklabels=False, showgrid=False, title=None),
-                yaxis=dict(categoryorder='total ascending', title=None, tickfont=dict(size=20, color='white')),
-                margin=dict(l=10, r=100, t=10, b=10)
+                showlegend=False, xaxis=dict(showticklabels=False, showgrid=False),
+                yaxis=dict(categoryorder='total ascending', title=None, tickfont=dict(size=18, color='white')),
+                margin=dict(l=10, r=80, t=10, b=10)
             )
             st.plotly_chart(fig, use_container_width=True)
 
         with st.expander("ℹ️ Understanding Portfolio Tiers"):
             st.markdown("""
-                <div style="line-height: 1.8;">
-                    <p><strong style="color:#00F5FF;">Prime:</strong> <span style="color:white;">High value clients (Total Payment Volume > $1000) with near-zero declines. These are the bank's most stable revenue assets.</span></p>
-                    <p><strong style="color:#5D3FD3;">Nitro Reserve:</strong> <span style="color:white;">Active users utilizing micro-credit to bridge liquidity. High growth potential with a solid repayment history.</span></p>
-                    <p><strong style="color:#E0B0FF;">Risk:</strong> <span style="color:white;">Users showing signs of financial stress with frequent insufficient fund declines. Requires strict monitoring.</span></p>
-                    <p><strong style="color:#FF3366;">Ghost:</strong> <span style="color:white;">Inactive accounts or users with insufficient data to establish a risk profile.</span></p>
-                </div>
-                """, unsafe_allow_html=True)
+                <p><strong style="color:#00F5FF;">Prime:</strong> High value clients with near-zero declines.</p>
+                <p><strong style="color:#5D3FD3;">Nitro Reserve:</strong> Active users utilizing micro-credit to bridge liquidity.</p>
+            """, unsafe_allow_html=True)
 
     with right_col:
         st.markdown("<h3 style='color: #5D3FD3;'>💳 Credit Advisor Simulator</h3>", unsafe_allow_html=True)
@@ -216,4 +189,3 @@ if not df.empty:
             st.caption("Criteria: Insufficient Volume or High Decline Rate")
 else:
     st.info("Awaiting connection to Data Pipeline...")
-    st.info("Awaiting connection to Databricks Lakehouse...")
