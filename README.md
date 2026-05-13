@@ -11,9 +11,9 @@ NitroBank is expanding its services across LATAM by introducing **Nitro Reserve*
 While reacting to checkout failures is highly profitable, scaling a true enterprise credit product requires evaluating the financial health of the **entire** customer base, not just reacting to drop-offs.
 
 ### The Engineering Solution and Business Impact
-To enable safe, enterprise-scale credit expansion, I engineered a **fully automated pipeline** powered by **K-Means Clustering (an Unsupervised Machine Learning model)** to evaluate all **450k+ customers**. This enables the system to objectively segment the user base by evaluating multiple financial behaviors simultaneously, replacing the need for rigid, manual SQL rules.
+To enable safe, enterprise-scale credit expansion, I engineered a **fully automated Medallion data pipeline** to evaluate all **450k+ customers**. By processing over **1.62 million raw web events**, the pipeline feeds clean, point-in-time financial features into an unsupervised **K-Means Machine Learning model**. This enables the system to objectively segment the user base by evaluating multiple financial behaviors simultaneously, replacing the need for rigid, manual SQL rules.
 
-This **Machine Learning-driven architecture** safely isolates our vast **123k "Prime"** user base for proactive credit offers while mathematically filtering out over **313k ghost accounts** and high-risk profiles. Furthermore, the pipeline orchestrates its own reporting, delivering self-updating dashboards directly to the credit and product teams, completely **eliminating the manual toil** of monthly risk assessments.
+This **Machine Learning-driven architecture** safely isolates our vast **123k "Prime"** user base for proactive credit offers while mathematically filtering out over **313k ghost accounts** and high-risk profiles. Furthermore, the pipeline orchestrates its own reporting, delivering self-updating dashboards directly to the credit and product teams, completely **eliminating the manual toil** of risk assessments.
 ## Data Pipeline Architecture 
 ![NitroBank Pipeline Architecture](Images/Data_pipeline_architecture.png)
 
