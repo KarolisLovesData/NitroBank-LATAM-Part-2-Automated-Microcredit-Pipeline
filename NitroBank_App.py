@@ -116,7 +116,6 @@ if not df.empty:
     # 5. KPI ROW
     c1, c2, c3, c4 = st.columns(4)
 
-    # Note: Using .iloc because these global stats are repeated in the aggregated rows
     total_cust = int(df['total_customers'].iloc[0]) if 'total_customers' in df.columns and not df.empty else 0
     avg_tpv_val = float(df['global_avg_tpv'].iloc[0]) if 'global_avg_tpv' in df.columns and not df.empty else 0
 
