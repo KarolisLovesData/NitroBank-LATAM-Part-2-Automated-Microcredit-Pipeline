@@ -131,7 +131,7 @@ if not df.empty:
 
     st.divider()
 
-    # 6. ANALYTICS & SIMULATOR
+
     left_col, right_col = st.columns(2)
 
     with left_col:
