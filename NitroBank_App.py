@@ -327,4 +327,4 @@ if not df.empty:
             st.caption("Criteria: Insufficient Volume or High Decline Rate")
 
 else:
-    st.info("Awaiting connection to Data Pipeline...")
+    st.info("Awaiting connection to Data Pipeline....")
