@@ -1,11 +1,10 @@
 """
 NITROBANK EXECUTIVE PULSE: LATAM MICROCREDIT DASHBOARD
-------------------------------------------------------
 PURPOSE: Provides segmentation of microcredit portfolios
          across Brazil, Mexico, and Colombia.
 TECH STACK: Streamlit, Databricks (Delta Lake), Plotly Express.
 KEY FEATURES:
-    - Automated Portfolio Tiering (Prime, Nitro, Risk, Ghost)
+    - Automated Portfolio Tiering (Apex, Prime, Nitro, Watchlists)
     - Live KPI Monitoring from Databricks Gold Tables
     - Real-time Credit Advisor Simulator
 """
@@ -16,9 +15,7 @@ from databricks import sql
 import plotly.express as px
 import os
 
-# ------------------------------------------
 # CONFIGURATION: SWITCH BETWEEN MODES HERE
-# ------------------------------------------
 # Set to True for the "Blazing Fast" portfolio experience
 # Set to False to use the live Databricks Lakehouse connection
 USE_CSV_MODE = True
@@ -59,17 +56,33 @@ def fetch_csv_data():
     try:
         # 1. Main portfolio tier data
         csv_path = os.path.join(os.path.dirname(__file__), "executive_pulse_data.csv")
-        dataframe = pd.read_csv(csv_path)
+        df = pd.read_csv(csv_path)
+
+        # Rename columns from the CSV format to match internal script logic
+        df = df.rename(columns={
+            'credit_product_tier': 'RawName',
+            'count(DISTINCTuser_id)': 'Count'
+        })
+
+        # Dynamically calculate the global metrics that are missing from the CSV rows
+        df['total_customers'] = df['Count'].sum()
+        df['global_avg_tpv'] = (df['Count'] * df['avg_tpv']).sum() / df['Count'].sum()
 
         # 2. User growth trend data
-        trend_csv_path = os.path.join(os.path.dirname(__file__), "user_growth_trend.csv")
-        df_trend = pd.read_csv(trend_csv_path)
+        try:
+            trend_csv_path = os.path.join(os.path.dirname(__file__), "user_growth_trend.csv")
+            df_trend = pd.read_csv(trend_csv_path)
+        except:
+            df_trend = pd.DataFrame()
 
         # 3. TPV trend data
-        tpv_csv_path = os.path.join(os.path.dirname(__file__), "AVG_TPV.csv")
-        df_tpv_trend = pd.read_csv(tpv_csv_path)
+        try:
+            tpv_csv_path = os.path.join(os.path.dirname(__file__), "AVG_TPV.csv")
+            df_tpv_trend = pd.read_csv(tpv_csv_path)
+        except:
+            df_tpv_trend = pd.DataFrame()
 
-        return dataframe, df_trend, df_tpv_trend
+        return df, df_trend, df_tpv_trend
     except Exception as e:
         st.error(f"CSV Loading Failed: {e}")
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
@@ -108,6 +121,7 @@ def run_data_pipeline():
             df_tpv_trend = pd.DataFrame()
 
         return df, df_trend, df_tpv_trend
+
 # 4. HEADER & LOGO
 logo_col, title_col = st.columns(2)
 
@@ -145,7 +159,6 @@ if not df.empty:
         with st.container(border=True):
             st.metric(label="👥 Total Registered Customers", value=f"{total_cust:,}")
 
-            # Sparkline integration
             if not df_trend.empty and 'month' in df_trend.columns and 'users' in df_trend.columns:
                 fig_spark = px.line(df_trend, x='month', y='users')
                 fig_spark.update_traces(line_color='#00F5FF', line_width=3)
@@ -161,7 +174,6 @@ if not df.empty:
                 )
                 st.plotly_chart(fig_spark, use_container_width=True, config={'displayModeBar': False})
 
-                # HTML label row injected right beneath the chart
                 st.markdown("""
                     <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #FFFFFF; margin-top: -12px;">
                         <span>Q1'24</span>
@@ -172,7 +184,6 @@ if not df.empty:
         with st.container(border=True):
             st.metric(label="💸 Avg Total Payment Volume (USD)", value=f"${avg_tpv_val:,.2f}")
 
-            # Sparkline integration
             if not df_tpv_trend.empty and 'month' in df_tpv_trend.columns and 'avg_TPV' in df_tpv_trend.columns:
                 fig_tpv_spark = px.line(df_tpv_trend, x='month', y='avg_TPV')
                 fig_tpv_spark.update_traces(line_color='#E0B0FF', line_width=3)
@@ -188,7 +199,6 @@ if not df.empty:
                 )
                 st.plotly_chart(fig_tpv_spark, use_container_width=True, config={'displayModeBar': False})
 
-                # HTML label row injected right beneath the chart
                 st.markdown("""
                     <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #FFFFFF; margin-top: -12px;">
                         <span>Q1'24</span>
@@ -197,18 +207,15 @@ if not df.empty:
                 """, unsafe_allow_html=True)
     with c3:
         with st.container(border=True):
-            # Focuses on the size of the pool and their high profitability
             st.metric(
                 label="💳 Pre-Approved Loan Candidates",
                 value="123K",
                 delta="$476 Avg. Total Payment Volume"
             )
 
-           
     with c4:
         with st.container(border=True):
             st.metric(label="🌎 Operating Market", value="LATAM")
-            # Using HTML to force real image rendering
             st.markdown("""
                 <div style="display: flex; align-items: center; gap: 7px; font-size: 0.85rem; color: #808495; margin-top: -10px;">
                     <span> </span>
@@ -220,24 +227,29 @@ if not df.empty:
 
     st.divider()
 
-
     left_col, right_col = st.columns(2)
 
     with left_col:
-        st.markdown("<h3 style='color: #5D3FD3;'>👥 Customer Distribution by Risk Segmentation</h3>",
-                    unsafe_allow_html=True)
+        st.markdown("<h3 style='color: #5D3FD3; margin-bottom: 0px;'>👥 Customer Distribution by Risk Segmentation</h3>", unsafe_allow_html=True)
+        # Made text white and pulled it closer with negative margin-top
+        st.markdown("<p style='color: #FFFFFF; font-size: 0.95rem; margin-top: -5px; font-weight: 500;'>~70% of total users are dormant. Targeted reactivation would turn sunk costs into high-margin ROI.</p>", unsafe_allow_html=True)
 
-        nitro_palette = {'Prime': '#00F5FF', 'Nitro Reserve': '#5D3FD3', 'Risk': '#E0B0FF', 'Ghost': '#FF3366'}
+        nitro_palette = {
+            'Tier 1: Apex Wallet (Whales & VIPs)': '#00F5FF',
+            'Prime Wallet (Healthy Base)': '#33FF99',
+            'Tier 2: Nitro Reserve (Micro-Loan Candidates)': '#5D3FD3',
+            'Tier 4: Watchlist (Ghost Accounts)': '#FF3366'
+        }
 
         if 'RawName' in df.columns:
             plot_df = df[['RawName', 'Count']].copy()
 
             def get_clean_tier(raw_str):
                 val = str(raw_str).lower()
-                if 'prime' in val or 'tier 1' in val: return 'Prime'
-                if 'nitro' in val or 'tier 2' in val: return 'Nitro Reserve'
-                if 'risk' in val or 'tier 3' in val: return 'Risk'
-                if 'ghost' in val or 'tier 4' in val: return 'Ghost'
+                if 'apex' in val or 'tier 1' in val: return 'Tier 1: Apex Wallet (Whales & VIPs)'
+                if 'nitro' in val or 'tier 2' in val: return 'Tier 2: Nitro Reserve (Micro-Loan Candidates)'
+                if 'ghost' in val or 'tier 4' in val: return 'Tier 4: Watchlist (Ghost Accounts)'
+                if 'prime' in val or 'base' in val: return 'Prime Wallet (Healthy Base)'
                 return str(raw_str)
 
             plot_df['Tier'] = plot_df['RawName'].apply(get_clean_tier)
@@ -259,7 +271,7 @@ if not df.empty:
                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
                 showlegend=False,
                 xaxis=dict(showticklabels=False, showgrid=False, title=None),
-                yaxis=dict(categoryorder='total ascending', title=None, tickfont=dict(size=20, color='white')),
+                yaxis=dict(categoryorder='total ascending', title=None, tickfont=dict(size=16, color='white')),
                 margin=dict(l=10, r=100, t=10, b=10)
             )
             st.plotly_chart(fig, use_container_width=True)
@@ -267,36 +279,52 @@ if not df.empty:
         with st.expander("ℹ️ Understanding Portfolio Tiers"):
             st.markdown("""
                 <div style="line-height: 1.8;">
-                    <p><strong style="color:#00F5FF;">Prime:</strong> <span style="color:white;">High value clients (Total Payment Volume > $400) with near-zero declines. These are the bank's most stable revenue assets.</span></p>
-                    <p><strong style="color:#5D3FD3;">Nitro Reserve:</strong> <span style="color:white;">Active users utilizing micro-credit to bridge liquidity. High growth potential with a solid repayment history.</span></p>
-                    <p><strong style="color:#E0B0FF;">Risk:</strong> <span style="color:white;">Users showing signs of financial stress with frequent insufficient fund declines. Requires strict monitoring.</span></p>
-                    <p><strong style="color:#FF3366;">Ghost:</strong> <span style="color:white;">Inactive accounts or users with insufficient data to establish a risk profile.</span></p>
+                    <p><strong style="color:#00F5FF;">Tier 1: Apex Wallet (Whales & VIPs):</strong> <span style="color:white;">Isolates the absolute top accounts where average TPV >= $500. Highly valuable targets for premium offerings.</span></p>
+                    <p><strong style="color:#33FF99;">Prime Wallet (Healthy Base):</strong> <span style="color:white;">The standard operational base. Healthy accounts averaging around $263 TPV with normalized transaction flow.</span></p>
+                    <p><strong style="color:#5D3FD3;">Tier 2: Nitro Reserve (Micro-Loan Candidates):</strong> <span style="color:white;">Users with frequent liquidity gaps, defined by an average decline rate >= 0.5. These are the prime targets for micro-loan intervention.</span></p>
+                    <p><strong style="color:#FF3366;">Tier 4: Watchlist (Ghost Accounts):</strong> <span style="color:white;">Absolute zero financial footprint (Avg TPV = 0). Likely abandoned or unverified registrations.</span></p>
                 </div>
                 """, unsafe_allow_html=True)
 
     with right_col:
         st.markdown("<h3 style='color: #5D3FD3;'>💳 Credit Advisor Simulator</h3>", unsafe_allow_html=True)
-        st.write("Determine product eligibility based on performance.")
+        st.write("Determine product eligibility based on analytical cluster logic.")
 
         sim_col1, sim_col2 = st.columns(2)
         with sim_col1:
-            input_tpv = st.number_input("Enter Total Payment Volume (USD)", min_value=0.0, value=0.0, step=10.0)
+            input_tpv = st.number_input(
+                "Avg Total Payment Volume (0 to 1000 USD)",
+                min_value=0.0,
+                max_value=1000.0,
+                value=0.0,
+                step=50.0
+            )
         with sim_col2:
-            input_dec = st.number_input("Enter Historical Declines (0 to 5)", min_value=0, max_value=5, value=0)
+            input_dec = st.number_input(
+                "Avg Declines (0-5)",
+                min_value=0.0,
+                max_value=5.0,
+                value=0.0,
+                step=0.1
+            )
 
-        # Logic engine
+        st.markdown("<br>", unsafe_allow_html=True)
+
         if input_tpv == 0:
-            st.info("👻 **Ghost Account Detected**")
-            st.caption("Criteria: No transaction history found.")
+            st.info("👻 **Tier 4: Watchlist (Ghost Accounts)**")
+            st.caption("Criteria: Absolute zero financial footprint.")
+        elif input_tpv >= 500 and input_dec == 0:
+            st.success("💎 **Tier 1: Apex Wallet (Whales & VIPs)**")
+            st.caption("Criteria: Premium Volume & Zero Risk Profile")
         elif input_tpv >= 400 and input_dec == 0:
-            st.success("🏆 **Approved for Prime Credit**")
+            st.success("✅ **Prime Wallet (Healthy Base)**")
             st.caption("Criteria: High Volume & Zero Risk Profile")
         elif input_tpv >= 300 and input_dec <= 2:
-            st.warning("⚡ **Approved for Nitro Micro-Credit**")
+            st.warning("⚡ **Tier 2: Nitro Reserve (Micro-Loan Candidates)**")
             st.caption("Criteria: Emerging User & Managed Risk")
         else:
             st.error("🚫 **Credit Restricted**")
             st.caption("Criteria: Insufficient Volume or High Decline Rate")
+
 else:
     st.info("Awaiting connection to Data Pipeline...")
-    st.info("Awaiting connection to Databricks Lakehouse...")
