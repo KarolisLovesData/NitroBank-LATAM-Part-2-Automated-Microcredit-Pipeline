@@ -15,8 +15,9 @@ To enable safe, enterprise-scale credit expansion, I engineered a **fully automa
 
 This **Machine Learning-driven architecture** safely isolates our top **~124k High-Value users** (spanning both 'Prime' and 'Apex' tiers) for proactive credit offers, while mathematically filtering out over **313k ghost accounts** and protecting against anomalous high-risk profiles. Furthermore, the pipeline orchestrates its own reporting, delivering self-updating dashboards directly to the credit and product teams, completely **eliminating the manual toil** of risk assessments.
 
----
-### Phase 4: K-Means Clustering & Business ROI (Gold Layer)
+![NitroBank Pipeline Architecture](Images/Data_pipeline_architecture.png)
+
+### Busines Value and ROI via K-Means Clustering 
 Deployed a distributed **PySpark K-Means model** to autonomously segment the 450k+ customer base. Because unsupervised ML outputs non-deterministic cluster IDs that can shift between runs, I engineered a deterministic SQL profiling layer using dynamic centroid evaluation. This automatically translates the ML clusters into **five stable, business-ready product tiers** designed to maximize revenue while protecting bank capital:
 
 *   **Tier 1: Apex Wallet (Whales & VIPs) | ~56.6k Users**
@@ -34,20 +35,19 @@ Deployed a distributed **PySpark K-Means model** to autonomously segment the 450
 *   **Tier 4: Watchlist (Ghost Accounts) | ~313.1k Users**
     *   **Profile:** Dormant users with an absolute zero financial footprint ($0 TPV).
     *   **Business ROI:** OpEx reduction. Deprecating these massive, inactive cohorts optimizes downstream database compute costs and eliminates wasted targeted marketing spend.
-![NitroBank Pipeline Architecture](Images/Data_pipeline_architecture.png)
+
 
 ---
 
 
-## Technical Implementation & Business Value
-
+## Technical Implementation 
 ### Phase 1 & 2: Automated Cross-Cloud Ingestion Pipeline
 To ensure the ML model evaluates customers based on up-to-date economic conditions, I architected a decoupled, two-stage ingestion pipeline bridging Google Cloud and Databricks.
 * **Scheduled Containerized Ingestion:** Utilized **GCP Cloud Scheduler** to trigger a **Dockerized Google Cloud Run** instance, routinely fetching and writing fresh financial payloads to Cloud Storage as compressed `.parquet` files.
 * **Event-Driven Orchestration:** Built a Python-triggered job that automatically wakes the **Databricks Engine** the moment new Parquet data arrives in GCS, ensuring seamless cross-cloud integration with zero idle compute time.
 * **Data Integrity & Schema Validation:** Enforced strict API contracts at the Cloud Run layer using **Pydantic**, causing the ingestion to "fail fast" on invalid payloads before they could enter the downstream Databricks environment.
 
-### Phase 3: Distributed Feature Engineering & ML Store (Silver Layer)
+### Distributed Feature Engineering 
 
 <img src="Images/data_lineage_graph.png" width="700">
 
@@ -58,20 +58,11 @@ To provide the PySpark K-Means algorithm with clean, one-row-per-user inputs, I 
 * **Behavioral Trust Signals (`time_to_value_hours`):** Converted raw timestamps into a continuous metric (hours from account creation to first payment) to mathematically proxy user intent and platform reliance.
 * **Algorithmic Fairness (Feature Scaling):** Scaled inputs before modeling so massive transaction volumes couldn't geometrically overpower nuanced behavioral signals (like decline velocity), guaranteeing fair credit evaluation across all income brackets.
 
-### Phase 4: K-Means Clustering & Business ROI (Gold Layer)
-Deployed a distributed **PySpark K-Means model (k=4)** to autonomously segment the 450k+ customer base. By evaluating complex behavioral signals, the pipeline transformed the user base into a **four-tiered** strategy designed to maximize revenue generation while protecting bank capital:
 
-* **Revenue Generation (Prime Wallet):** Unlocked **~123k** highly active users averaging $476 TPV. Proactively offering this core profit engine higher-limit credit *before* a failure occurs drives massive top-line growth and Customer Lifetime Value (LTV).
-* **Immediate ROI (Nitro Reserve):** Pinpointed **~13.3k** high-intent users hitting "liquidity walls" (~$20 TPV, ~1.0 decline/user). Deploying instant, point-of-sale micro-loans to this cohort directly recovers abandoned checkout revenue.
-* **Capital Protection (High-Risk):** Isolated **~1.5k** profiles attempting large transfers (averaging $579 TPV) with anomalous, delayed Time-To-Value metrics. Proactively flagging these accounts shields the bank from high-impact fraud, defaults, and chargebacks.
-* **OpEx Reduction (Ghost Accounts):** Identified **~312k** dormant users with zero financial footprint ($0 TPV). Deprecating these inactive cohorts optimizes database compute costs and eliminates wasted marketing spend.
-
-### Phase 5: Real-Time BI & Executive Serving Layer
+### Real-Time BI & Executive Serving Layer
 * **Deployed a Real-Time BI Application:** Built an interactive serving layer using **Streamlit** and **Plotly** to democratize K-Means ML outputs for non-technical stakeholders.
 * **Eliminated Data Silos:** Connected the application directly to **Databricks Delta Gold** tables, providing credit and product teams with a live visual pulse of portfolio tier distributions.
 * **Operationalized ML Intelligence:** Engineered a real-time **Credit Advisor Simulator** that instantly evaluates new customer eligibility, bridging the gap between backend analytics and frontend business decisions.
-
-
 
 
 ### Challenges & Roadblocks
