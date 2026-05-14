@@ -145,13 +145,10 @@ if not df.empty:
         with st.container(border=True):
             st.metric(label="👥 Total Registered Customers", value=f"{total_cust:,}")
 
-            # Sparkline integration using user_growth_trend.csv data
+            # Sparkline integration
             if not df_trend.empty and 'month' in df_trend.columns and 'users' in df_trend.columns:
                 fig_spark = px.line(df_trend, x='month', y='users')
-
-                # Electric Cyan (#00F5FF) line
                 fig_spark.update_traces(line_color='#00F5FF', line_width=3)
-
                 fig_spark.update_layout(
                     showlegend=False,
                     xaxis=dict(visible=False, fixedrange=True),
@@ -163,18 +160,22 @@ if not df.empty:
                     hovermode='x unified'
                 )
                 st.plotly_chart(fig_spark, use_container_width=True, config={'displayModeBar': False})
+
+                # HTML label row injected right beneath the chart
+                st.markdown("""
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #FFFFFF; margin-top: -12px;">
+                        <span>Q1'24</span>
+                        <span>Q4'25</span>
+                    </div>
+                """, unsafe_allow_html=True)
     with c2:
         with st.container(border=True):
             st.metric(label="💸 Avg Total Payment Volume (USD)", value=f"${avg_tpv_val:,.2f}")
 
-            # Sparkline integration using AVG_TPV.csv data
+            # Sparkline integration
             if not df_tpv_trend.empty and 'month' in df_tpv_trend.columns and 'avg_TPV' in df_tpv_trend.columns:
                 fig_tpv_spark = px.line(df_tpv_trend, x='month', y='avg_TPV')
-
-                # Using Light Purple (#E0B0FF) for contrast against the Cyan chart
-                # You can change this to #00F5FF if you want them strictly identical
                 fig_tpv_spark.update_traces(line_color='#E0B0FF', line_width=3)
-
                 fig_tpv_spark.update_layout(
                     showlegend=False,
                     xaxis=dict(visible=False, fixedrange=True),
@@ -186,13 +187,21 @@ if not df.empty:
                     hovermode='x unified'
                 )
                 st.plotly_chart(fig_tpv_spark, use_container_width=True, config={'displayModeBar': False})
+
+                # HTML label row injected right beneath the chart
+                st.markdown("""
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #FFFFFF; margin-top: -12px;">
+                        <span>Q1'24</span>
+                        <span>Q4'25</span>
+                    </div>
+                """, unsafe_allow_html=True)
     with c3:
         with st.container(border=True):
             # Focuses on the size of the pool and their high profitability
             st.metric(
                 label="💳 Pre-Approved Loan Candidates",
                 value="123K",
-                delta="$476 Avg. TPV"
+                delta="$476 Avg. Total Payment Volume"
             )
 
            
