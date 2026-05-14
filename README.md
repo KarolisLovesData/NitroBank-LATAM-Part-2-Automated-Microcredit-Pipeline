@@ -17,7 +17,7 @@ This **Machine Learning-driven architecture** safely isolates our top **~124k Hi
 
 ![NitroBank Pipeline Architecture](Images/Data_pipeline_architecture.png)
 
-### Busines Value and ROI via K-Means Clustering 
+### Business Value and ROI via K-Means Clustering
 
 Deployed a distributed **PySpark K-Means model** to autonomously segment the 450k+ customer base. Because unsupervised ML outputs non-deterministic cluster IDs, I engineered a SQL profiling layer to translate these clusters into **four stable, business-ready product tiers** using dynamic centroid evaluation:
 
@@ -30,10 +30,9 @@ Deployed a distributed **PySpark K-Means model** to autonomously segment the 450
 *   **Tier 2: Nitro Reserve (Micro-Loan Candidates) | ~13.4k Users | Avg TPV: $19.46**
     *   **Profile:** High-intent users hitting "liquidity walls" (identified by low TPV and high decline ratios).
     *   **Business ROI:** Deploying instant, point-of-sale micro-loans directly recovers abandoned checkout revenue and bridges temporary liquidity gaps.
-*   **Tier 4: Watchlist (Ghost Accounts) | ~313.1k Users | Avg TPV: $0.00**
-    *   **Profile:** Dormant users with an absolute zero financial footprint.
-    *   **Business ROI:** OpEx reduction. Deprecating these inactive cohorts optimizes downstream database compute costs and eliminates wasted marketing spend.
----
+*   **Tier 4: The Sunk-Cost Cohort (Ghost Accounts) | ~313.1k Users | Avg TPV: $0.00**
+    *   **Profile:** Dormant users with an absolute zero financial footprint who have already cleared the initial friction of app installation and onboarding.
+    *   **Business ROI:** **CAC Arbitrage & Reactivation.** With neobanking Customer Acquisition Costs (CAC) at a premium, the initial marketing spend for this cohort is already a sunk cost. Instead of deprecating these records, isolating this segment allows the marketing engine to deploy highly targeted, low-cost reactivation triggers (e.g., zero-fee first transfers or micro-credit pre-approvals). Converting even a fractional percentage of this cohort into Tier 2 (Nitro Reserve) generates high-margin Lifetime Value (LTV) without incurring net-new acquisition spend.
 
 
 ## Technical Implementation 
