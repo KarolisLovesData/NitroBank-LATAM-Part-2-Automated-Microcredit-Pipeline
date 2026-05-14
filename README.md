@@ -38,10 +38,11 @@ The model segments registered users into **four stable, business-ready product t
 ## Technical Implementation
 
 ### Decoupled Cross-Cloud Ingestion Architecture
-To ensure the ML model evaluates customers based on up-to-date economic conditions, I architected a decoupled ingestion pipeline bridging Google Cloud and Databricks.
-*   **Scheduled Containerized Ingestion:** Triggered a **Dockerized Google Cloud Run** instance via **GCP Cloud Scheduler** to fetch and write compressed `.parquet` payloads to Cloud Storage.
-*   **Event-Driven Orchestration:** Engineered a Python-triggered workflow that initiates the **Databricks Engine** upon data arrival, ensuring zero idle compute time.
-*   **Data Integrity & Schema Validation:** Enforced strict API contracts using **Pydantic** to "fail fast" on invalid payloads, protecting downstream integrity.
+To ensure the ML model evaluates customers based on up-to-date economic conditions, this decoupled ingestion pipeline bridges Google Cloud and Databricks.
+
+*   **Scheduled Containerized Ingestion:** A Dockerized Google Cloud Run instance triggers via GCP Cloud Scheduler to fetch and write compressed `.parquet` payloads to Cloud Storage.
+*   **Event-Driven Orchestration:** A Python-triggered workflow initiates the Databricks Engine upon data arrival, ensuring zero idle compute time.
+*   **Data Integrity & Schema Validation:** Pydantic enforces strict API contracts to "fail fast" on invalid payloads, protecting downstream integrity.
 
 ### Distributed Feature Engineering
 
@@ -52,7 +53,7 @@ To provide PySpark with high-fidelity, one-row-per-user inputs, I pre-aggregated
 *   **Dynamic FX Normalization:** Deduplicated FX payloads and joined point-in-time exchange rates to ensure equitable cross-border credit evaluation.
 *   **Risk vs. Liquidity Profiling:** Utilized `COUNT_IF` to isolate users exhibiting "liquidity wall" friction from those showing fraudulent decline patterns.
 *   **Behavioral Trust Signals:** Calculated `time_to_value_hours` to mathematically proxy user intent and platform reliance.
-*   **Algorithmic Fairness:** Scaled features to ensure massive transaction volumes did not overpower nuanced behavioral signals (like decline velocity).
+*   **Dimensionality Normalization:** Scaled features to ensure massive transaction volumes did not overpower nuanced behavioral signals (like decline velocity).
 
 ### Real-Time BI & Executive Serving Layer
 *   **Streamlit Serving Layer:** Built an interactive application to democratize ML outputs for non-technical stakeholders.
@@ -69,7 +70,7 @@ To provide PySpark with high-fidelity, one-row-per-user inputs, I pre-aggregated
 
 #### 2. Mitigating Macroeconomic Drift
 *   **The Challenge:** Rapid inflation in LATAM can artificially inflate TPV, causing "concept drift" and incorrectly promoting users to high-risk credit tiers.
-*   **Proposed Solution:** Integrating a **rolling 30-day macroeconomic index** into the Silver Layer to normalize TPV *before* it reaches the ML model, ensuring the system maintains accurate risk profiles regardless of market volatility.
+*   **The Solution:** Integrating a **rolling 30-day macroeconomic index** into the Silver Layer to normalize TPV *before* it reaches the ML model, ensuring the system maintains accurate risk profiles regardless of market volatility.
 
 #### 3. Optimized Compute via Pre-Aggregation
 *   **The Challenge:** Direct joins between `users` and high-velocity `events` created a Cartesian "fan-out," ballooning compute costs.
