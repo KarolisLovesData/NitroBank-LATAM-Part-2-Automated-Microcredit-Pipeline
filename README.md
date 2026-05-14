@@ -13,8 +13,27 @@ While reacting to checkout failures is highly profitable, scaling a true enterpr
 ### The Engineering Solution and Business Impact
 To enable safe, enterprise-scale credit expansion, I engineered a **fully automated Medallion data pipeline** to evaluate all **450k+ customers**. By processing over **1.62 million raw web events**, the pipeline feeds clean, point-in-time financial features into an unsupervised **K-Means Machine Learning model**. This enables the system to objectively segment the user base by evaluating multiple financial behaviors simultaneously, replacing the need for rigid, manual SQL rules.
 
-This **Machine Learning-driven architecture** safely isolates our vast **123k "Prime"** user base for proactive credit offers while mathematically filtering out over **313k ghost accounts** and high-risk profiles. Furthermore, the pipeline orchestrates its own reporting, delivering self-updating dashboards directly to the credit and product teams, completely **eliminating the manual toil** of risk assessments.
-## Data Pipeline Architecture 
+This **Machine Learning-driven architecture** safely isolates our top **~124k High-Value users** (spanning both 'Prime' and 'Apex' tiers) for proactive credit offers, while mathematically filtering out over **313k ghost accounts** and protecting against anomalous high-risk profiles. Furthermore, the pipeline orchestrates its own reporting, delivering self-updating dashboards directly to the credit and product teams, completely **eliminating the manual toil** of risk assessments.
+
+---
+### Phase 4: K-Means Clustering & Business ROI (Gold Layer)
+Deployed a distributed **PySpark K-Means model** to autonomously segment the 450k+ customer base. Because unsupervised ML outputs non-deterministic cluster IDs that can shift between runs, I engineered a deterministic SQL profiling layer using dynamic centroid evaluation. This automatically translates the ML clusters into **five stable, business-ready product tiers** designed to maximize revenue while protecting bank capital:
+
+*   **Tier 1: Apex Wallet (Whales & VIPs) | ~56.6k Users**
+    *   **Profile:** High-volume spenders mathematically isolated by an average Total Payment Volume (TPV) of $500+.
+    *   **Business ROI:** Maximizes Customer Lifetime Value (LTV) by proactively unlocking premium, high-limit credit lines for the platform's most lucrative demographic before they look to competitors.
+*   **Prime Wallet (Healthy Base) | ~67.4k Users**
+    *   **Profile:** The reliable, standard-spend user base captured safely beneath the Apex threshold but above the high-risk guardrails. 
+    *   **Business ROI:** Serves as the core profit engine for standard credit offerings, driving consistent, predictable transaction volume and top-line growth.
+*   **Tier 2: Nitro Reserve (Micro-Loan Candidates) | ~13.4k Users**
+    *   **Profile:** High-intent users hitting "liquidity walls," identified by a high decline-to-transaction ratio (averaging >= 0.5 declines).
+    *   **Business ROI:** Deploying instant, point-of-sale micro-loans to this specific cohort directly recovers abandoned checkout revenue and bridges temporary liquidity gaps.
+*   **Tier 3: Watchlist (High Risk/Fraud) | Future-Proofing Guardrail**
+    *   **Profile:** A protective trap designed to catch anomalous, slow-moving accounts (Time-to-Value > 150 hours) that suddenly spike in volume.
+    *   **Business ROI:** Capital protection. Ensuring these accounts do not slip into the Prime or Apex tiers shields the bank from high-impact fraud, organized defaults, and chargebacks.
+*   **Tier 4: Watchlist (Ghost Accounts) | ~313.1k Users**
+    *   **Profile:** Dormant users with an absolute zero financial footprint ($0 TPV).
+    *   **Business ROI:** OpEx reduction. Deprecating these massive, inactive cohorts optimizes downstream database compute costs and eliminates wasted targeted marketing spend.
 ![NitroBank Pipeline Architecture](Images/Data_pipeline_architecture.png)
 
 ---
