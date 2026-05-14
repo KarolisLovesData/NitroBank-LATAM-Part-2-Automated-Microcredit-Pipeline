@@ -1,7 +1,7 @@
 """
 NITROBANK EXECUTIVE PULSE: LATAM MICROCREDIT DASHBOARD
 ------------------------------------------------------
-PURPOSE: Provides real-time segmentation of microcredit portfolios
+PURPOSE: Provides segmentation of microcredit portfolios
          across Brazil, Mexico, and Colombia.
 TECH STACK: Streamlit, Databricks (Delta Lake), Plotly Express.
 KEY FEATURES:
@@ -51,18 +51,29 @@ def fetch_lakehouse_data(query_string):
         st.error(f"Databricks Connection Failed: {e}")
         return pd.DataFrame()
 
+
 # 2. DATA ENGINE: METHOD B (Local CSV Snapshot)
 @st.cache_data
 def fetch_csv_data():
     """High-performance method for portfolio showcase."""
     try:
-        # Assumes executive_pulse_data.csv is in the same folder as main.py
+        # 1. Main portfolio tier data
         csv_path = os.path.join(os.path.dirname(__file__), "executive_pulse_data.csv")
         dataframe = pd.read_csv(csv_path)
-        return dataframe
+
+        # 2. User growth trend data
+        trend_csv_path = os.path.join(os.path.dirname(__file__), "user_growth_trend.csv")
+        df_trend = pd.read_csv(trend_csv_path)
+
+        # 3. TPV trend data
+        tpv_csv_path = os.path.join(os.path.dirname(__file__), "AVG_TPV.csv")
+        df_tpv_trend = pd.read_csv(tpv_csv_path)
+
+        return dataframe, df_trend, df_tpv_trend
     except Exception as e:
         st.error(f"CSV Loading Failed: {e}")
-        return pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+
 
 # 3. THE DATA PIPELINE WRAPPER
 def run_data_pipeline():
@@ -73,7 +84,6 @@ def run_data_pipeline():
     if USE_CSV_MODE:
         return fetch_csv_data()
     else:
-        # This query utilizes Window Functions for optimized aggregation
         DATA_QUERY = """
             SELECT DISTINCT
                 credit_product_tier AS RawName,
@@ -82,8 +92,22 @@ def run_data_pipeline():
                 AVG(total_payment_volume_usd) OVER () AS global_avg_tpv
             FROM gold_user_credit_tiers
         """
-        return fetch_lakehouse_data(DATA_QUERY)
+        df = fetch_lakehouse_data(DATA_QUERY)
 
+        # Fallback to local CSVs for trends in portfolio mode
+        try:
+            trend_csv_path = os.path.join(os.path.dirname(__file__), "user_growth_trend.csv")
+            df_trend = pd.read_csv(trend_csv_path)
+        except:
+            df_trend = pd.DataFrame()
+
+        try:
+            tpv_csv_path = os.path.join(os.path.dirname(__file__), "AVG_TPV.csv")
+            df_tpv_trend = pd.read_csv(tpv_csv_path)
+        except:
+            df_tpv_trend = pd.DataFrame()
+
+        return df, df_trend, df_tpv_trend
 # 4. HEADER & LOGO
 logo_col, title_col = st.columns(2)
 
@@ -97,14 +121,16 @@ with logo_col:
 
 with title_col:
     st.markdown("""
-        <div style="margin-top: 30px; margin-bottom: 20px;">
-            <h1 style='color: #5D3FD3; margin: 0px; padding: 0px; line-height: 1.1;'>Executive Pulse</h1>
-            <h3 style='color: #5D3FD3; margin: 0px; padding: 0px; line-height: 1.1;'>Real-time Microcredit Segmentation (LATAM)</h3>
+        <div style="margin-top: 25px; margin-bottom: 20px;">
+            <h1 style='color: #00F5FF; margin: 0px; font-size: 2.2rem;'>Customer Risk Profile Intelligence</h1>
+            <p style='color: #E0B0FF; margin: -15px 0px 0px 0px; font-size: 1.1rem; font-weight: 500;'>
+                Strategic Audit Period: Q1 2024 — Q4 2025
+            </p>
         </div>
     """, unsafe_allow_html=True)
 
 # EXECUTE PIPELINE
-df = run_data_pipeline()
+df, df_trend, df_tpv_trend = run_data_pipeline()
 
 if not df.empty:
     st.markdown("<br>", unsafe_allow_html=True)
@@ -118,16 +144,70 @@ if not df.empty:
     with c1:
         with st.container(border=True):
             st.metric(label="👥 Total Registered Customers", value=f"{total_cust:,}")
+
+            # Sparkline integration using user_growth_trend.csv data
+            if not df_trend.empty and 'month' in df_trend.columns and 'users' in df_trend.columns:
+                fig_spark = px.line(df_trend, x='month', y='users')
+
+                # Electric Cyan (#00F5FF) line
+                fig_spark.update_traces(line_color='#00F5FF', line_width=3)
+
+                fig_spark.update_layout(
+                    showlegend=False,
+                    xaxis=dict(visible=False, fixedrange=True),
+                    yaxis=dict(visible=False, fixedrange=True),
+                    margin=dict(l=0, r=0, t=0, b=0),
+                    height=40,
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    hovermode='x unified'
+                )
+                st.plotly_chart(fig_spark, use_container_width=True, config={'displayModeBar': False})
     with c2:
         with st.container(border=True):
             st.metric(label="💸 Avg Total Payment Volume (USD)", value=f"${avg_tpv_val:,.2f}")
+
+            # Sparkline integration using AVG_TPV.csv data
+            if not df_tpv_trend.empty and 'month' in df_tpv_trend.columns and 'avg_TPV' in df_tpv_trend.columns:
+                fig_tpv_spark = px.line(df_tpv_trend, x='month', y='avg_TPV')
+
+                # Using Light Purple (#E0B0FF) for contrast against the Cyan chart
+                # You can change this to #00F5FF if you want them strictly identical
+                fig_tpv_spark.update_traces(line_color='#E0B0FF', line_width=3)
+
+                fig_tpv_spark.update_layout(
+                    showlegend=False,
+                    xaxis=dict(visible=False, fixedrange=True),
+                    yaxis=dict(visible=False, fixedrange=True),
+                    margin=dict(l=0, r=0, t=0, b=0),
+                    height=40,
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    hovermode='x unified'
+                )
+                st.plotly_chart(fig_tpv_spark, use_container_width=True, config={'displayModeBar': False})
     with c3:
         with st.container(border=True):
-            st.metric(label="📡 System Health", value="Optimal", delta="Active")
+            # Focuses on the size of the pool and their high profitability
+            st.metric(
+                label="💳 Pre-Approved Loan Candidates",
+                value="123K",
+                delta="$476 Avg. TPV"
+            )
+
+           
     with c4:
         with st.container(border=True):
             st.metric(label="🌎 Operating Market", value="LATAM")
-            st.caption("📍 Brazil / Mexico / Colombia")
+            # Using HTML to force real image rendering
+            st.markdown("""
+                <div style="display: flex; align-items: center; gap: 7px; font-size: 0.85rem; color: #808495; margin-top: -10px;">
+                    <span> </span>
+                    <img src="https://flagcdn.com/w20/br.png" width="18"> Brazil /
+                    <img src="https://flagcdn.com/w20/mx.png" width="18"> Mexico /
+                    <img src="https://flagcdn.com/w20/co.png" width="18"> Colombia
+                </div>
+            """, unsafe_allow_html=True)
 
     st.divider()
 
@@ -178,7 +258,7 @@ if not df.empty:
         with st.expander("ℹ️ Understanding Portfolio Tiers"):
             st.markdown("""
                 <div style="line-height: 1.8;">
-                    <p><strong style="color:#00F5FF;">Prime:</strong> <span style="color:white;">High value clients (Total Payment Volume > $1000) with near-zero declines. These are the bank's most stable revenue assets.</span></p>
+                    <p><strong style="color:#00F5FF;">Prime:</strong> <span style="color:white;">High value clients (Total Payment Volume > $400) with near-zero declines. These are the bank's most stable revenue assets.</span></p>
                     <p><strong style="color:#5D3FD3;">Nitro Reserve:</strong> <span style="color:white;">Active users utilizing micro-credit to bridge liquidity. High growth potential with a solid repayment history.</span></p>
                     <p><strong style="color:#E0B0FF;">Risk:</strong> <span style="color:white;">Users showing signs of financial stress with frequent insufficient fund declines. Requires strict monitoring.</span></p>
                     <p><strong style="color:#FF3366;">Ghost:</strong> <span style="color:white;">Inactive accounts or users with insufficient data to establish a risk profile.</span></p>
