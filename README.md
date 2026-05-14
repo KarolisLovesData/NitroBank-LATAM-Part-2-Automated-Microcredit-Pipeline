@@ -13,7 +13,7 @@ While reacting to checkout failures is highly profitable, scaling a true enterpr
 ### The Engineering Solution and Business Impact
 To enable safe, enterprise-scale credit expansion, I engineered a **fully automated Medallion data pipeline** to evaluate all **450k+ customers**. By processing over **1.62 million raw web events**, the pipeline feeds clean, point-in-time financial features into an **unsupervised K-Means clustering model (k=4)**. 
 
-This **PySpark K-Means ML model** segments registered users into **four stable, business-ready product tiers**. It safely isolates **NitroBank's** top **~124k High-Value users** (spanning both 'Prime' and 'Apex' tiers) for proactive credit offers, while mathematically filtering out over **313k ghost accounts** and protecting against anomalous high-risk profiles. Furthermore, the pipeline orchestrates its own reporting, delivering self-updating dashboards directly to the credit and product teams, completely **eliminating the manual toil** of risk assessments.
+The model segments registered users into **four stable, business-ready product tiers**. It safely isolates **NitroBank's** top **~124k High-Value users** (spanning both 'Prime' and 'Apex' tiers) for proactive credit offers, while mathematically filtering out over **313k ghost accounts** and protecting against anomalous high-risk profiles. Furthermore, the pipeline orchestrates its own reporting, delivering self-updating dashboards directly to the credit and product teams, completely **eliminating the manual toil** of risk assessments.
 
 ![NitroBank Pipeline Architecture](Images/Data_pipeline_architecture.png)
 
