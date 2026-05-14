@@ -18,25 +18,21 @@ This **Machine Learning-driven architecture** safely isolates our top **~124k Hi
 ![NitroBank Pipeline Architecture](Images/Data_pipeline_architecture.png)
 
 ### Busines Value and ROI via K-Means Clustering 
-Deployed a distributed **PySpark K-Means model** to autonomously segment the 450k+ customer base. Because unsupervised ML outputs non-deterministic cluster IDs that can shift between runs, I engineered a deterministic SQL profiling layer using dynamic centroid evaluation. This automatically translates the ML clusters into **five stable, business-ready product tiers** designed to maximize revenue while protecting bank capital:
 
-*   **Tier 1: Apex Wallet (Whales & VIPs) | ~56.6k Users**
-    *   **Profile:** High-volume spenders mathematically isolated by an average Total Payment Volume (TPV) of $500+.
-    *   **Business ROI:** Maximizes Customer Lifetime Value (LTV) by proactively unlocking premium, high-limit credit lines for the platform's most lucrative demographic before they look to competitors.
-*   **Prime Wallet (Healthy Base) | ~67.4k Users**
-    *   **Profile:** The reliable, standard-spend user base captured safely beneath the Apex threshold but above the high-risk guardrails. 
-    *   **Business ROI:** Serves as the core profit engine for standard credit offerings, driving consistent, predictable transaction volume and top-line growth.
-*   **Tier 2: Nitro Reserve (Micro-Loan Candidates) | ~13.4k Users**
-    *   **Profile:** High-intent users hitting "liquidity walls," identified by a high decline-to-transaction ratio (averaging >= 0.5 declines).
-    *   **Business ROI:** Deploying instant, point-of-sale micro-loans to this specific cohort directly recovers abandoned checkout revenue and bridges temporary liquidity gaps.
-*   **Tier 3: Watchlist (High Risk/Fraud) | Future-Proofing Guardrail**
-    *   **Profile:** A protective trap designed to catch anomalous, slow-moving accounts (Time-to-Value > 150 hours) that suddenly spike in volume.
-    *   **Business ROI:** Capital protection. Ensuring these accounts do not slip into the Prime or Apex tiers shields the bank from high-impact fraud, organized defaults, and chargebacks.
-*   **Tier 4: Watchlist (Ghost Accounts) | ~313.1k Users**
-    *   **Profile:** Dormant users with an absolute zero financial footprint ($0 TPV).
-    *   **Business ROI:** OpEx reduction. Deprecating these massive, inactive cohorts optimizes downstream database compute costs and eliminates wasted targeted marketing spend.
+Deployed a distributed **PySpark K-Means model** to autonomously segment the 450k+ customer base. Because unsupervised ML outputs non-deterministic cluster IDs, I engineered a SQL profiling layer to translate these clusters into **four stable, business-ready product tiers** using dynamic centroid evaluation:
 
-
+*   **Tier 1: Apex Wallet (Whales & VIPs) | ~56.6k Users | Avg TPV: $766.37**
+    *   **Profile:** High-volume spenders mathematically isolated by top-tier transaction activity.
+    *   **Business ROI:** Maximizes Customer Lifetime Value (LTV) by proactively unlocking premium, high-limit credit lines for the platform's most lucrative demographic.
+*   **Prime Wallet (Healthy Base) | ~67.4k Users | Avg TPV: $263.69**
+    *   **Profile:** The reliable, standard-spend user base driving the majority of consistent platform activity.
+    *   **Business ROI:** Serves as the core profit engine for standard credit offerings, ensuring predictable top-line growth.
+*   **Tier 2: Nitro Reserve (Micro-Loan Candidates) | ~13.4k Users | Avg TPV: $19.46**
+    *   **Profile:** High-intent users hitting "liquidity walls" (identified by low TPV and high decline ratios).
+    *   **Business ROI:** Deploying instant, point-of-sale micro-loans directly recovers abandoned checkout revenue and bridges temporary liquidity gaps.
+*   **Tier 4: Watchlist (Ghost Accounts) | ~313.1k Users | Avg TPV: $0.00**
+    *   **Profile:** Dormant users with an absolute zero financial footprint.
+    *   **Business ROI:** OpEx reduction. Deprecating these inactive cohorts optimizes downstream database compute costs and eliminates wasted marketing spend.
 ---
 
 
