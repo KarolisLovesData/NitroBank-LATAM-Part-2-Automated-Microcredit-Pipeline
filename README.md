@@ -64,9 +64,9 @@ To provide PySpark with high-fidelity, one-row-per-user inputs, I pre-aggregated
 
 ## Engineering for Resilience & Scale
 
-#### 1. Pragmatic Portfolio UX vs. Production Database Live Connections
-* **The Challenge:** In a live enterprise environment, the Streamlit layer queries Databricks Delta Gold tables dynamically. However, when deploying a public portfolio on Streamlit Cloud's community tier, inactive applications are automatically hibernated after 7 days, and direct cloud database connections introduce artificial query latency for reviewing hiring managers.
-* **The Solution:** Implemented a decoupled portfolio architecture using a high-performance local CSV snapshot wrapper (`USE_CSV_MODE = True`) to guarantee a sub-3-second rendering speed. To circumvent platform hibernation constraints permanently, I engineered a serverless **GitHub Actions CI/CD workflow** (`keep_alive.yml`) that utilizes a scheduled `cron` job to ping the public application endpoint every 3 days. This maintains container warmth and ensures instant responsiveness for recruiters, while preserving the fully functional Databricks integration code for deployment documentation.
+#### 1. Pragmatic Portfolio UX vs. Live Lakehouse Connections
+* **The Challenge:** In production, the app dynamically queries Databricks Delta Gold tables. However, direct cloud database connections introduce query latency, and Streamlit Cloud's community tier hibernates inactive apps after 7 days—risking a slow, poor first impression for reviewing hiring managers.
+* **The Solution:** Optimized UX by decoupling the portfolio layer with a local CSV snapshot wrapper (`USE_CSV_MODE = True`), guaranteeing a sub-3-second rendering speed. To permanently circumvent platform hibernation, I engineered a serverless **GitHub Actions CI/CD workflow** (`keep_alive.yml`) using a scheduled `cron` job. Pinging the endpoint every 3 days maintains container warmth and instant responsiveness for recruiters, while preserving the production-ready Databricks integration code for documentation.
 
 #### 2. Deterministic Labeling of Stochastic Outputs
 *   **The Challenge:** K-Means cluster IDs (0, 1, 2) are non-deterministic and shuffle between runs, breaking downstream logic.
