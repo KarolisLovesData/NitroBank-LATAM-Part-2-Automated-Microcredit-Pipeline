@@ -64,14 +64,18 @@ To provide PySpark with high-fidelity, one-row-per-user inputs, I pre-aggregated
 
 ## Engineering for Resilience & Scale
 
-#### 1. Deterministic Labeling of Stochastic Outputs
+#### 1. Pragmatic Portfolio UX vs. Production Database Live Connections
+* **The Challenge:** In a live enterprise environment, the Streamlit layer queries Databricks Delta Gold tables dynamically. However, when deploying a public portfolio on Streamlit Cloud's community tier, inactive applications are automatically hibernated after 7 days, and direct cloud database connections introduce artificial query latency for reviewing hiring managers.
+* **The Solution:** Implemented a decoupled portfolio architecture using a high-performance local CSV snapshot wrapper (`USE_CSV_MODE = True`) to guarantee a sub-3-second rendering speed. To circumvent platform hibernation constraints permanently, I engineered a serverless **GitHub Actions CI/CD workflow** (`keep_alive.yml`) that utilizes a scheduled `cron` job to ping the public application endpoint every 3 days. This maintains container warmth and ensures instant responsiveness for recruiters, while preserving the fully functional Databricks integration code for deployment documentation.
+
+#### 2. Deterministic Labeling of Stochastic Outputs
 *   **The Challenge:** K-Means cluster IDs (0, 1, 2) are non-deterministic and shuffle between runs, breaking downstream logic.
 *   **The Solution:** Engineered a dynamic profiling step to calculate mathematical centroids. By evaluating these against business guardrails (e.g., TPV thresholds), the pipeline automatically translates random IDs into stable, business-ready labels.
 
-#### 2. Mitigating Macroeconomic Drift
+#### 3. Mitigating Macroeconomic Drift
 *   **The Challenge:** Rapid inflation in LATAM can artificially inflate TPV, causing "concept drift" and incorrectly promoting users to high-risk credit tiers.
 *   **The Solution:** Integrating a **rolling 30-day macroeconomic index** into the Silver Layer to normalize TPV *before* it reaches the ML model, ensuring the system maintains accurate risk profiles regardless of market volatility.
 
-#### 3. Optimized Compute via Pre-Aggregation
+#### 4. Optimized Compute via Pre-Aggregation
 *   **The Challenge:** Direct joins between `users` and high-velocity `events` created a Cartesian "fan-out," ballooning compute costs.
 *   **The Solution:** Refactored the architecture using CTEs to pre-aggregate metrics. Decoupled this into a scheduled job materializing a `user_ml_features` table, eliminating the fan-out and significantly reducing OpEx.
