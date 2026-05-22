@@ -11,7 +11,6 @@ KEY FEATURES:
 
 import streamlit as st
 import pandas as pd
-from databricks import sql
 import plotly.express as px
 import os
 
@@ -31,7 +30,8 @@ st.set_page_config(
 # 2. DATA ENGINE: METHOD A (Databricks Connection)
 @st.cache_data(ttl=600)
 def fetch_lakehouse_data(query_string):
-    """Original method for live production environments."""
+
+    from databricks import sql  # <-- LAZY LOADED: Only runs if USE_CSV_MODE is False
     try:
         conn = sql.connect(
             server_hostname=st.secrets["DATABRICKS_HOST"],
