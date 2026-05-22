@@ -64,18 +64,25 @@ To provide PySpark with high-fidelity, one-row-per-user inputs, I pre-aggregated
 
 ## Engineering for Resilience & Scale
 
-#### 1. Pragmatic Portfolio UX vs. Live Lakehouse Connections
-* **The Challenge:** In production, the app dynamically queries Databricks Delta Gold tables. However, direct cloud database connections introduce query latency, and Streamlit Cloud's community tier hibernates inactive apps after 7 days—risking a slow, poor first impression for reviewing hiring managers.
-* **The Solution:** Optimized UX by decoupling the portfolio layer with a local CSV snapshot wrapper (`USE_CSV_MODE = True`), guaranteeing a sub-3-second rendering speed. To permanently circumvent platform hibernation, I engineered a serverless **GitHub Actions CI/CD workflow** (`keep_alive.yml`) using a scheduled `cron` job. Pinging the endpoint every 3 days maintains container warmth and instant responsiveness for recruiters, while preserving the production-ready Databricks integration code for documentation.
+### 1. Pragmatic Portfolio UX vs. Live Lakehouse Connections
 
-#### 2. Deterministic Labeling of Stochastic Outputs
+**The Challenge:** In production, the application dynamically queries Databricks Delta Gold tables. However, direct cloud connections introduce query latency, and Streamlit Cloud hibernates inactive apps after 7 days—risking a slow, poor first impression for reviewing hiring managers.
+
+**The Solution Architecture:**
+
+1. **Data Layer Decoupling:** Isolated the portfolio presentation layer using a local data snapshot wrapper (`USE_CSV_MODE = True`). This eliminates cloud database fetch latency and guarantees a **sub-3-second rendering speed**.
+2. **Automated Maintenance Loop:** Engineered a serverless GitHub Actions CI/CD workflow (`keep_alive.yml`) driven by a scheduled cron job.
+3. **Container Warmth Orchestration:** Programmatically pings the public deployment endpoint every 3 days to completely reset Streamlit Cloud's inactivity timer, ensuring instant responsiveness for recruiters.
+4. **Codebase Integrity:** Preserved all live, production-ready Databricks integration and execution logic within the codebase for architectural documentation.
+
+### 2. Deterministic Labeling of Stochastic Outputs
 *   **The Challenge:** K-Means cluster IDs (0, 1, 2) are non-deterministic and shuffle between runs, breaking downstream logic.
 *   **The Solution:** Engineered a dynamic profiling step to calculate mathematical centroids. By evaluating these against business guardrails (e.g., TPV thresholds), the pipeline automatically translates random IDs into stable, business-ready labels.
 
-#### 3. Mitigating Macroeconomic Drift
+### 3. Mitigating Macroeconomic Drift
 *   **The Challenge:** Rapid inflation in LATAM can artificially inflate TPV, causing "concept drift" and incorrectly promoting users to high-risk credit tiers.
 *   **The Solution:** Integrating a **rolling 30-day macroeconomic index** into the Silver Layer to normalize TPV *before* it reaches the ML model, ensuring the system maintains accurate risk profiles regardless of market volatility.
 
-#### 4. Optimized Compute via Pre-Aggregation
+### 4. Optimized Compute via Pre-Aggregation
 *   **The Challenge:** Direct joins between `users` and high-velocity `events` created a Cartesian "fan-out," ballooning compute costs.
 *   **The Solution:** Refactored the architecture using CTEs to pre-aggregate metrics. Decoupled this into a scheduled job materializing a `user_ml_features` table, eliminating the fan-out and significantly reducing OpEx.
