@@ -45,7 +45,7 @@ def upload_to_gcs(local_path, bucket_name):
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(local_path)
 
-    print(f"☁️ Uploading {local_path} to GCS...")
+    print(f"☁️ Uploading the currency rates to GCS...")
     blob.upload_from_filename(local_path)
     print(f" Success! Data landed in gs://{bucket_name}/")
 
