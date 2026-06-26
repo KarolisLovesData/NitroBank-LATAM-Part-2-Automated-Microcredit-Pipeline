@@ -14,6 +14,7 @@ import pandas as pd
 import plotly.express as px
 import os
 
+
 # CONFIGURATION: SWITCH BETWEEN MODES HERE
 # Set to True for the "Blazing Fast" portfolio experience
 # Set to False to use the live Databricks Lakehouse connection
@@ -55,7 +56,7 @@ def fetch_csv_data():
     """High-performance method for portfolio showcase."""
     try:
         # 1. Main portfolio tier data
-        csv_path = os.path.join(os.path.dirname(__file__), "executive_pulse_data.csv")
+        csv_path = os.path.join(os.path.dirname(__file__), "data/executive_pulse_data.csv")
         df = pd.read_csv(csv_path)
 
         # Rename columns from the CSV format to match internal script logic
@@ -70,14 +71,14 @@ def fetch_csv_data():
 
         # 2. User growth trend data
         try:
-            trend_csv_path = os.path.join(os.path.dirname(__file__), "user_growth_trend.csv")
+            trend_csv_path = os.path.join(os.path.dirname(__file__), "data/user_growth_trend.csv")
             df_trend = pd.read_csv(trend_csv_path)
         except:
             df_trend = pd.DataFrame()
 
         # 3. TPV trend data
         try:
-            tpv_csv_path = os.path.join(os.path.dirname(__file__), "AVG_TPV.csv")
+            tpv_csv_path = os.path.join(os.path.dirname(__file__), "data/AVG_TPV.csv")
             df_tpv_trend = pd.read_csv(tpv_csv_path)
         except:
             df_tpv_trend = pd.DataFrame()
@@ -109,13 +110,13 @@ def run_data_pipeline():
 
         # Fallback to local CSVs for trends in portfolio mode
         try:
-            trend_csv_path = os.path.join(os.path.dirname(__file__), "user_growth_trend.csv")
+            trend_csv_path = os.path.join(os.path.dirname(__file__), "data/user_growth_trend.csv")
             df_trend = pd.read_csv(trend_csv_path)
         except:
             df_trend = pd.DataFrame()
 
         try:
-            tpv_csv_path = os.path.join(os.path.dirname(__file__), "AVG_TPV.csv")
+            tpv_csv_path = os.path.join(os.path.dirname(__file__), "data/AVG_TPV.csv")
             df_tpv_trend = pd.read_csv(tpv_csv_path)
         except:
             df_tpv_trend = pd.DataFrame()
