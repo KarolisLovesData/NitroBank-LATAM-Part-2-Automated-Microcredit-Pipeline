@@ -10,7 +10,7 @@ NitroBank is expanding its services across LATAM by introducing **Nitro Reserve*
 ### The Strategic Challenge
 While reacting to checkout failures is highly profitable, scaling a true enterprise credit product requires evaluating the financial health of the **entire** customer base, not just reacting to drop-offs.
 
-### The Engineering Solution and Business Impact
+### The Business Impact and Engineering Solution 
 To enable safe, enterprise-scale credit expansion, I engineered a **fully automated Medallion data pipeline** to evaluate all **450k+ customers**. By processing over **1.62 million raw web events**, the pipeline feeds clean, point-in-time financial features into an **unsupervised K-Means clustering model (k=4)**. 
 
 The model segments registered users into **four stable, business-ready product tiers**. It safely isolates **NitroBank's** top **~124k High-Value users** (spanning both 'Prime' and 'Apex' tiers) for proactive credit offers, while mathematically filtering out over **313k ghost accounts** and protecting against anomalous high-risk profiles. Furthermore, the pipeline orchestrates its own reporting, delivering self-updating dashboards directly to the credit and product teams, completely **eliminating the manual toil** of risk assessments.
