@@ -1,43 +1,59 @@
 """
 NITROBANK EXECUTIVE PULSE: LATAM MICROCREDIT DASHBOARD
-PURPOSE: Provides segmentation of microcredit portfolios
-         across Brazil, Mexico, and Colombia.
-TECH STACK: Streamlit, Databricks (Delta Lake), Plotly Express.
-KEY FEATURES:
-    - Automated Portfolio Tiering (Apex, Prime, Nitro, Watchlists)
-    - Live KPI Monitoring from Databricks Gold Tables
-    - Real-time Credit Advisor Simulator
+======================================================
+PURPOSE:
+    Provides executive-level risk profiling and credit tier segmentation for microcredit 
+    portfolios across LATAM operating markets (Brazil, Mexico, Colombia).
+
+ARCHITECTURE & DESIGN PATTERNS:
+    - Dual-Engine Data Orchestration: Seamlessly toggles between a live Databricks 
+      Lakehouse SQL connection (Delta Lake Gold tables) and high-performance local snapshots.
+    - Portfolio & Showcase Optimization: Utilizes an instant snapshot mode by default to 
+      eliminate recruiter drop-off caused by cloud compute cold starts (Spark cluster spin-up).
+    - Production Guardrails: Features lazy loading for cloud dependencies, session caching, 
+      defensive fallback logic, and modular UI components built with Streamlit and Plotly.
+
 """
 
-import streamlit as st
+import os
 import pandas as pd
 import plotly.express as px
-import os
+import streamlit as st
 
-
-# CONFIGURATION: SWITCH BETWEEN MODES HERE
-# Set to True for the "Blazing Fast" portfolio experience
-# Set to False to use the live Databricks Lakehouse connection
+# ==============================================================================
+# DATA ENGINE ARCHITECTURE SELECTION
+# ==============================================================================
+# Set to True for portfolio reviews and hiring manager demos.
+# RATIONALE: Databricks serverless/classic clusters require a cold-start spin-up 
+# time (~2-3 minutes) if idle. Using optimized local snapshots ensures sub-second 
+# page renders and zero friction during live technical evaluations.
+# Set to False in active enterprise deployments to query Delta Lake Gold tables directly.
 USE_CSV_MODE = True
 
-# 1. PAGE SETUP & ICON
+# 1. PAGE SETUP & INITIALIZATION
 st.set_page_config(
     page_title="Executive Pulse",
     page_icon=":material/monitoring:",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="collapsed",
 )
 
-# 2. DATA ENGINE: METHOD A (Databricks Connection)
-@st.cache_data(ttl=600)
-def fetch_lakehouse_data(query_string):
 
-    from databricks import sql  # <-- LAZY LOADED: Only runs if USE_CSV_MODE is False
+# 2. DATA ENGINE: METHOD A (Live Databricks Lakehouse Connection)
+@st.cache_data(ttl=600)  # Caches SQL results for 10 minutes to minimize warehouse compute costs
+def fetch_lakehouse_data(query_string):
+    """Establishes a secure connection to the Databricks SQL Warehouse using 
+
+    Streamlit secrets and executes raw analytical SQL queries against Gold layer tables.
+    """
+    # Lazy load databricks-sql-connector only when querying live cloud infrastructure
+    from databricks import sql
+
     try:
         conn = sql.connect(
             server_hostname=st.secrets["DATABRICKS_HOST"],
             http_path=st.secrets["DATABRICKS_HTTP_PATH"],
-            access_token=st.secrets["DATABRICKS_TOKEN"]
+            access_token=st.secrets["DATABRICKS_TOKEN"],
         )
         with conn.cursor() as cursor:
             cursor.execute(query_string)
@@ -50,37 +66,50 @@ def fetch_lakehouse_data(query_string):
         return pd.DataFrame()
 
 
-# 2. DATA ENGINE: METHOD B (Local CSV Snapshot)
+# 2. DATA ENGINE: METHOD B (Local Snapshot for Frictionless Portfolio Demonstrations)
 @st.cache_data
 def fetch_csv_data():
-    """High-performance method for portfolio showcase."""
+    """High-performance snapshot engine designed for instantaneous portfolio rendering.
+
+    Loads pre-calculated metrics and time-series trends while mirroring the exact
+    schema and calculations produced by the Databricks Gold SQL pipeline.
+    """
     try:
-        # 1. Main portfolio tier data
-        csv_path = os.path.join(os.path.dirname(__file__), "data/executive_pulse_data.csv")
+        # Load primary credit tier snapshot
+        csv_path = os.path.join(
+            os.path.dirname(__file__), "data/executive_pulse_data.csv"
+        )
         df = pd.read_csv(csv_path)
 
-        # Rename columns from the CSV format to match internal script logic
-        df = df.rename(columns={
-            'credit_product_tier': 'RawName',
-            'count(DISTINCTuser_id)': 'Count'
-        })
+        # Standardize column mappings to maintain parity with Lakehouse SQL output
+        df = df.rename(
+            columns={
+                "credit_product_tier": "RawName",
+                "count(DISTINCTuser_id)": "Count",
+            }
+        )
 
-        # Dynamically calculate the global metrics that are missing from the CSV rows
-        df['total_customers'] = df['Count'].sum()
-        df['global_avg_tpv'] = (df['Count'] * df['avg_tpv']).sum() / df['Count'].sum()
+        # Dynamically calculate global portfolio aggregations
+        df["total_customers"] = df["Count"].sum()
+        df["global_avg_tpv"] = (df["Count"] * df["avg_tpv"]).sum() / df[
+            "Count"
+        ].sum()
 
-        # 2. User growth trend data
+        # Load supplementary time-series data for sparkline trend visualizations
         try:
-            trend_csv_path = os.path.join(os.path.dirname(__file__), "data/user_growth_trend.csv")
+            trend_csv_path = os.path.join(
+                os.path.dirname(__file__), "data/user_growth_trend.csv"
+            )
             df_trend = pd.read_csv(trend_csv_path)
-        except:
+        except Exception:
             df_trend = pd.DataFrame()
 
-        # 3. TPV trend data
         try:
-            tpv_csv_path = os.path.join(os.path.dirname(__file__), "data/AVG_TPV.csv")
+            tpv_csv_path = os.path.join(
+                os.path.dirname(__file__), "data/AVG_TPV.csv"
+            )
             df_tpv_trend = pd.read_csv(tpv_csv_path)
-        except:
+        except Exception:
             df_tpv_trend = pd.DataFrame()
 
         return df, df_trend, df_tpv_trend
@@ -89,15 +118,16 @@ def fetch_csv_data():
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 
-# 3. THE DATA PIPELINE WRAPPER
+# 3. PIPELINE ORCHESTRATION LAYER
 def run_data_pipeline():
-    """
-    Orchestrates the data flow.
-    Toggle USE_CSV_MODE at the top of the file to switch sources.
+    """Routes execution based on USE_CSV_MODE. 
+
+    Decouples presentation logic from underlying data extraction sources.
     """
     if USE_CSV_MODE:
         return fetch_csv_data()
     else:
+        # Analytical query targeting Lakehouse Gold Layer (window functions for aggregated metrics)
         DATA_QUERY = """
             SELECT DISTINCT
                 credit_product_tier AS RawName,
@@ -108,22 +138,31 @@ def run_data_pipeline():
         """
         df = fetch_lakehouse_data(DATA_QUERY)
 
-        # Fallback to local CSVs for trends in portfolio mode
+        # Fallback to trend files if streaming historical data is handled separately
         try:
-            trend_csv_path = os.path.join(os.path.dirname(__file__), "data/user_growth_trend.csv")
+            trend_csv_path = os.path.join(
+                os.path.dirname(__file__), "data/user_growth_trend.csv"
+            )
             df_trend = pd.read_csv(trend_csv_path)
-        except:
+        except Exception:
             df_trend = pd.DataFrame()
 
         try:
-            tpv_csv_path = os.path.join(os.path.dirname(__file__), "data/AVG_TPV.csv")
+            tpv_csv_path = os.path.join(
+                os.path.dirname(__file__), "data/AVG_TPV.csv"
+            )
             df_tpv_trend = pd.read_csv(tpv_csv_path)
-        except:
+        except Exception:
             df_tpv_trend = pd.DataFrame()
 
         return df, df_trend, df_tpv_trend
 
-# 4. HEADER & LOGO
+
+# ==============================================================================
+# UI COMPONENT LAYER & APPLICATION LAYOUT
+# ==============================================================================
+
+# 4. HEADER & BRANDING SECTION
 logo_col, title_col = st.columns(2)
 
 with logo_col:
@@ -131,166 +170,251 @@ with logo_col:
     try:
         st.image(logo_path, width=200)
     except Exception:
-        st.markdown("<h2 style='color:#00F5FF; margin-top:0;'>🏦 NITRO</h2>", unsafe_allow_html=True)
+        st.markdown(
+            "<h2 style='color:#00F5FF; margin-top:0;'>🏦 NITRO</h2>",
+            unsafe_allow_html=True,
+        )
         st.error("Could not find 'nitrobank_logo.png'.")
 
 with title_col:
-    st.markdown("""
+    st.markdown(
+        """
         <div style="margin-top: 25px; margin-bottom: 20px;">
             <h1 style='color: #00F5FF; margin: 0px; font-size: 2.2rem;'>Customer Risk Profile Intelligence</h1>
             <p style='color: #E0B0FF; margin: -15px 0px 0px 0px; font-size: 1.1rem; font-weight: 500;'>
                 Strategic Audit Period: Q1 2024 — Q4 2025
             </p>
         </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
-# EXECUTE PIPELINE
+# EXECUTE DATA PIPELINE
 df, df_trend, df_tpv_trend = run_data_pipeline()
 
 if not df.empty:
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 5. KPI ROW
+    # 5. EXECUTIVE KPI CARDS WITH EMBEDDED PLOTLY SPARKLINES
     c1, c2, c3, c4 = st.columns(4)
 
-    total_cust = int(df['total_customers'].iloc[0]) if 'total_customers' in df.columns and not df.empty else 0
-    avg_tpv_val = float(df['global_avg_tpv'].iloc[0]) if 'global_avg_tpv' in df.columns and not df.empty else 0
+    total_cust = (
+        int(df["total_customers"].iloc[0])
+        if "total_customers" in df.columns and not df.empty
+        else 0
+    )
+    avg_tpv_val = (
+        float(df["global_avg_tpv"].iloc[0])
+        if "global_avg_tpv" in df.columns and not df.empty
+        else 0
+    )
 
     with c1:
         with st.container(border=True):
-            st.metric(label="👥 Total Registered Customers", value=f"{total_cust:,}")
+            st.metric(
+                label="👥 Total Registered Customers", value=f"{total_cust:,}"
+            )
 
-            if not df_trend.empty and 'month' in df_trend.columns and 'users' in df_trend.columns:
-                fig_spark = px.line(df_trend, x='month', y='users')
-                fig_spark.update_traces(line_color='#00F5FF', line_width=3)
+            # Micro-visualization: Sparkline for user growth velocity
+            if (
+                not df_trend.empty
+                and "month" in df_trend.columns
+                and "users" in df_trend.columns
+            ):
+                fig_spark = px.line(df_trend, x="month", y="users")
+                fig_spark.update_traces(line_color="#00F5FF", line_width=3)
                 fig_spark.update_layout(
                     showlegend=False,
                     xaxis=dict(visible=False, fixedrange=True),
                     yaxis=dict(visible=False, fixedrange=True),
                     margin=dict(l=0, r=0, t=0, b=0),
                     height=40,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    hovermode='x unified'
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    hovermode="x unified",
                 )
-                st.plotly_chart(fig_spark, use_container_width=True, config={'displayModeBar': False})
+                st.plotly_chart(
+                    fig_spark,
+                    use_container_width=True,
+                    config={"displayModeBar": False},
+                )
 
-                st.markdown("""
+                st.markdown(
+                    """
                     <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #FFFFFF; margin-top: -12px;">
                         <span>Q1'24</span>
                         <span>Q4'25</span>
                     </div>
-                """, unsafe_allow_html=True)
+                """,
+                    unsafe_allow_html=True,
+                )
+
     with c2:
         with st.container(border=True):
-            st.metric(label="💸 Avg Total Payment Volume (USD)", value=f"${avg_tpv_val:,.2f}")
+            st.metric(
+                label="💸 Avg Total Payment Volume (USD)",
+                value=f"${avg_tpv_val:,.2f}",
+            )
 
-            if not df_tpv_trend.empty and 'month' in df_tpv_trend.columns and 'avg_TPV' in df_tpv_trend.columns:
-                fig_tpv_spark = px.line(df_tpv_trend, x='month', y='avg_TPV')
-                fig_tpv_spark.update_traces(line_color='#E0B0FF', line_width=3)
+            # Micro-visualization: Sparkline for TPV trajectory
+            if (
+                not df_tpv_trend.empty
+                and "month" in df_tpv_trend.columns
+                and "avg_TPV" in df_tpv_trend.columns
+            ):
+                fig_tpv_spark = px.line(df_tpv_trend, x="month", y="avg_TPV")
+                fig_tpv_spark.update_traces(
+                    line_color="#E0B0FF", line_width=3
+                )
                 fig_tpv_spark.update_layout(
                     showlegend=False,
                     xaxis=dict(visible=False, fixedrange=True),
                     yaxis=dict(visible=False, fixedrange=True),
                     margin=dict(l=0, r=0, t=0, b=0),
                     height=40,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    hovermode='x unified'
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    hovermode="x unified",
                 )
-                st.plotly_chart(fig_tpv_spark, use_container_width=True, config={'displayModeBar': False})
+                st.plotly_chart(
+                    fig_tpv_spark,
+                    use_container_width=True,
+                    config={"displayModeBar": False},
+                )
 
-                st.markdown("""
+                st.markdown(
+                    """
                     <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #FFFFFF; margin-top: -12px;">
                         <span>Q1'24</span>
                         <span>Q4'25</span>
                     </div>
-                """, unsafe_allow_html=True)
+                """,
+                    unsafe_allow_html=True,
+                )
+
     with c3:
         with st.container(border=True):
             st.metric(
                 label="💳 Pre-Approved Loan Candidates",
                 value="123K",
-                delta="$476 Avg. Total Payment Volume"
+                delta="$476 Avg. Total Payment Volume",
             )
 
     with c4:
         with st.container(border=True):
             st.metric(label="🌎 Operating Market", value="LATAM")
-            st.markdown("""
+            st.markdown(
+                """
                 <div style="display: flex; align-items: center; gap: 7px; font-size: 0.85rem; color: #808495; margin-top: -10px;">
                     <span> </span>
                     <img src="https://flagcdn.com/w20/br.png" width="18"> Brazil /
                     <img src="https://flagcdn.com/w20/mx.png" width="18"> Mexico /
                     <img src="https://flagcdn.com/w20/co.png" width="18"> Colombia
                 </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
 
     st.divider()
 
+    # 6. ANALYTICAL CHARTS & SIMULATOR
     left_col, right_col = st.columns(2)
 
     with left_col:
-        st.markdown("<h3 style='color: #5D3FD3; margin-bottom: 0px;'>👥 Customer Distribution by Risk Segmentation</h3>", unsafe_allow_html=True)
-        # Made text white and pulled it closer with negative margin-top
-        st.markdown("<p style='color: #FFFFFF; font-size: 0.95rem; margin-top: -5px; font-weight: 500;'>~70% of total users are dormant. Targeted reactivation would turn sunk costs into high-margin ROI.</p>", unsafe_allow_html=True)
+        st.markdown(
+            "<h3 style='color: #5D3FD3; margin-bottom: 0px;'>👥 Customer"
+            " Distribution by Risk Segmentation</h3>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<p style='color: #FFFFFF; font-size: 0.95rem; margin-top: -5px;"
+            " font-weight: 500;'>~70% of total users are dormant. Targeted"
+            " reactivation would turn sunk costs into high-margin ROI.</p>",
+            unsafe_allow_html=True,
+        )
 
+        # Custom high-contrast theme palette mapped to risk profiles
         nitro_palette = {
-            'Tier 1: Apex Wallet (Whales & VIPs)': '#00F5FF',
-            'Prime Wallet (Healthy Base)': '#33FF99',
-            'Tier 2: Nitro Reserve (Micro-Loan Candidates)': '#5D3FD3',
-            'Tier 4: Watchlist (Ghost Accounts)': '#FF3366'
+            "Tier 1: Apex Wallet (Whales & VIPs)": "#00F5FF",
+            "Prime Wallet (Healthy Base)": "#33FF99",
+            "Tier 2: Nitro Reserve (Micro-Loan Candidates)": "#5D3FD3",
+            "Tier 4: Watchlist (Ghost Accounts)": "#FF3366",
         }
 
-        if 'RawName' in df.columns:
-            plot_df = df[['RawName', 'Count']].copy()
+        if "RawName" in df.columns:
+            plot_df = df[["RawName", "Count"]].copy()
 
+            # Helper function to map raw SQL strings into cleaned presentation tiers
             def get_clean_tier(raw_str):
                 val = str(raw_str).lower()
-                if 'apex' in val or 'tier 1' in val: return 'Tier 1: Apex Wallet (Whales & VIPs)'
-                if 'nitro' in val or 'tier 2' in val: return 'Tier 2: Nitro Reserve (Micro-Loan Candidates)'
-                if 'ghost' in val or 'tier 4' in val: return 'Tier 4: Watchlist (Ghost Accounts)'
-                if 'prime' in val or 'base' in val: return 'Prime Wallet (Healthy Base)'
+                if "apex" in val or "tier 1" in val:
+                    return "Tier 1: Apex Wallet (Whales & VIPs)"
+                if "nitro" in val or "tier 2" in val:
+                    return "Tier 2: Nitro Reserve (Micro-Loan Candidates)"
+                if "ghost" in val or "tier 4" in val:
+                    return "Tier 4: Watchlist (Ghost Accounts)"
+                if "prime" in val or "base" in val:
+                    return "Prime Wallet (Healthy Base)"
                 return str(raw_str)
 
-            plot_df['Tier'] = plot_df['RawName'].apply(get_clean_tier)
-            plot_df['Label'] = plot_df['Count'].apply(lambda x: f"{x / 1000:.0f}k" if x >= 1000 else str(x))
+            plot_df["Tier"] = plot_df["RawName"].apply(get_clean_tier)
+            plot_df["Label"] = plot_df["Count"].apply(
+                lambda x: f"{x / 1000:.0f}k" if x >= 1000 else str(x)
+            )
 
+            # Horizontal distribution chart
             fig = px.bar(
-                plot_df, x='Count', y='Tier', orientation='h',
-                color='Tier', color_discrete_map=nitro_palette,
-                text='Label', template="plotly_dark"
+                plot_df,
+                x="Count",
+                y="Tier",
+                orientation="h",
+                color="Tier",
+                color_discrete_map=nitro_palette,
+                text="Label",
+                template="plotly_dark",
             )
 
             fig.update_traces(
-                textposition='outside',
+                textposition="outside",
                 marker_cornerradius=15,
-                textfont=dict(size=18, color='white'),
-                cliponaxis=False
+                textfont=dict(size=18, color="white"),
+                cliponaxis=False,
             )
             fig.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
                 showlegend=False,
                 xaxis=dict(showticklabels=False, showgrid=False, title=None),
-                yaxis=dict(categoryorder='total ascending', title=None, tickfont=dict(size=16, color='white')),
-                margin=dict(l=10, r=100, t=10, b=10)
+                yaxis=dict(
+                    categoryorder="total ascending",
+                    title=None,
+                    tickfont=dict(size=16, color="white"),
+                ),
+                margin=dict(l=10, r=100, t=10, b=10),
             )
             st.plotly_chart(fig, use_container_width=True)
 
         with st.expander("ℹ️ Understanding Portfolio Tiers"):
-            st.markdown("""
+            st.markdown(
+                """
                 <div style="line-height: 1.8;">
                     <p><strong style="color:#00F5FF;">Tier 1: Apex Wallet (Whales & VIPs):</strong> <span style="color:white;">Isolates the absolute top accounts where average TPV >= $500. Highly valuable targets for premium offerings.</span></p>
                     <p><strong style="color:#33FF99;">Prime Wallet (Healthy Base):</strong> <span style="color:white;">The standard operational base. Healthy accounts averaging around $263 TPV with normalized transaction flow.</span></p>
                     <p><strong style="color:#5D3FD3;">Tier 2: Nitro Reserve (Micro-Loan Candidates):</strong> <span style="color:white;">Users with frequent liquidity gaps, defined by an average decline rate >= 0.5. These are the prime targets for micro-loan intervention.</span></p>
                     <p><strong style="color:#FF3366;">Tier 4: Watchlist (Ghost Accounts):</strong> <span style="color:white;">Absolute zero financial footprint (Avg TPV = 0). Likely abandoned or unverified registrations.</span></p>
                 </div>
-                """, unsafe_allow_html=True)
+                """,
+                unsafe_allow_html=True,
+            )
 
     with right_col:
-        st.markdown("<h3 style='color: #5D3FD3;'>💳 Credit Advisor Simulator</h3>", unsafe_allow_html=True)
+        st.markdown(
+            "<h3 style='color: #5D3FD3;'>💳 Credit Advisor Simulator</h3>",
+            unsafe_allow_html=True,
+        )
         st.write("Determine product eligibility based on analytical cluster logic.")
 
+        # User inputs for dynamic decision engine evaluation
         sim_col1, sim_col2 = st.columns(2)
         with sim_col1:
             input_tpv = st.number_input(
@@ -298,7 +422,7 @@ if not df.empty:
                 min_value=0.0,
                 max_value=1000.0,
                 value=0.0,
-                step=50.0
+                step=50.0,
             )
         with sim_col2:
             input_dec = st.number_input(
@@ -306,11 +430,12 @@ if not df.empty:
                 min_value=0.0,
                 max_value=5.0,
                 value=0.0,
-                step=0.1
+                step=0.1,
             )
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+        # Decision Tree Logic based on transaction behavior thresholds
         if input_tpv == 0:
             st.info("👻 **Tier 4: Watchlist (Ghost Accounts)**")
             st.caption("Criteria: Absolute zero financial footprint.")
@@ -321,11 +446,15 @@ if not df.empty:
             st.success("✅ **Prime Wallet (Healthy Base)**")
             st.caption("Criteria: High Volume & Zero Risk Profile")
         elif input_tpv >= 300 and input_dec <= 2:
-            st.warning("⚡ **Tier 2: Nitro Reserve (Micro-Loan Candidates)**")
+            st.warning(
+                "⚡ **Tier 2: Nitro Reserve (Micro-Loan Candidates)**"
+            )
             st.caption("Criteria: Emerging User & Managed Risk")
         else:
             st.error("🚫 **Credit Restricted**")
-            st.caption("Criteria: Insufficient Volume or High Decline Rate")
+            st.caption(
+                "Criteria: Insufficient Volume or High Decline Rate"
+            )
 
 else:
     st.info("Awaiting connection to Data Pipeline....")
