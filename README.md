@@ -31,7 +31,7 @@ The model segments registered users into **four stable, business-ready product t
     *   **Profile:** Dormant users who have cleared initial KYC and onboarding but remain inactive.
     *   **Business ROI: CAC Arbitrage.** With neobanking Customer Acquisition Costs (CAC) at a premium, this cohort represents significant sunk investment. Isolating this segment allows marketing to deploy targeted reactivation triggers (e.g., pre-approved micro-limits), generating high-margin LTV without the expense of net-new acquisition.
 
-<img src="Images/NitroBankApp.gif" width="700">
+<img src="Images/NitroBankApp.gif" width="800">
 ---
 
 ## Technical Implementation
