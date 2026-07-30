@@ -2,8 +2,6 @@
 
 # 🏦 NitroBank: Automated Microcredit Pipeline
 
-[🌐 Click here to view the live Streamlit App](your-url-here)
-
 ### The Business Opportunity
 NitroBank is expanding its services across LATAM by introducing **Nitro Reserve**—contextual microcredit offerings in Brazil, Mexico, and Colombia. Initial analysis of over **145k regional transactions** revealed a massive opportunity: of the **15.3k declined transactions**, a staggering **89.2%** failed strictly due to **Insufficient Funds**. By bridging these liquidity gaps with real-time micro-loans, we transform moments of customer friction into loyalty-building events.
 
@@ -33,6 +31,7 @@ The model segments registered users into **four stable, business-ready product t
     *   **Profile:** Dormant users who have cleared initial KYC and onboarding but remain inactive.
     *   **Business ROI: CAC Arbitrage.** With neobanking Customer Acquisition Costs (CAC) at a premium, this cohort represents significant sunk investment. Isolating this segment allows marketing to deploy targeted reactivation triggers (e.g., pre-approved micro-limits), generating high-margin LTV without the expense of net-new acquisition.
 
+<img src="Images/NitroBankApp.gif" width="700">
 ---
 
 ## Technical Implementation
