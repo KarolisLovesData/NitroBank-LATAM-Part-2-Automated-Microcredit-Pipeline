@@ -20,7 +20,7 @@ The model segments registered users into **four stable, business-ready product t
 
 *   **Tier 1: Apex Wallet (Whales & VIPs) | ~56.6k Users | Avg TPV: $766.37**
     *   **Profile:** High-volume spenders mathematically isolated by top-tier transaction activity.
-    *   **Business ROI:** Maximizes Customer Lifetime Value (LTV) by proactively unlocking premium, high-limit credit lines for the platform's most lucrative demographic.
+    *   **Business ROI:** Maximizes Customer Lifetime Value (LTV) by proactively unlocking premium, high-limit credit lines for the platform's most lucrative             demographic.
 *   **Tier 2: Prime Wallet (Healthy Base) | ~67.4k Users | Avg TPV: $263.69**
     *   **Profile:** The reliable, standard-spend user base driving the majority of consistent platform activity.
     *   **Business ROI:** Serves as the core profit engine for standard credit offerings, ensuring predictable top-line growth.
@@ -29,7 +29,7 @@ The model segments registered users into **four stable, business-ready product t
     *   **Business ROI:** Deploying instant, point-of-sale micro-loans directly recovers abandoned checkout revenue and bridges temporary liquidity gaps.
 *   **Tier 4: The Reactivation Engine (Ghost Accounts) | ~313.1k Users | Avg TPV: $0.00**
     *   **Profile:** Dormant users who have cleared initial KYC and onboarding but remain inactive.
-    *   **Business ROI: CAC Arbitrage.** With neobanking Customer Acquisition Costs (CAC) at a premium, this cohort represents significant sunk investment. Isolating this segment allows marketing to deploy targeted reactivation triggers (e.g., pre-approved micro-limits), generating high-margin LTV without the expense of net-new acquisition.
+    *   **Business ROI: CAC Arbitrage.** With neobanking Customer Acquisition Costs (CAC) at a premium, this cohort represents significant sunk investment.              Isolating this segment allows marketing to deploy targeted reactivation triggers (e.g., pre-approved micro-limits), generating high-margin LTV without the        expense of net-new acquisition.
 
          <img src="Images/NitroBankApp.gif" width="900">
 ---
