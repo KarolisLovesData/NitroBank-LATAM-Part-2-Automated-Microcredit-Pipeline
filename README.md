@@ -17,7 +17,6 @@ The model segments registered users into **four stable, business-ready product t
 
 ### ROI and Business Value through Strategic Segmentation
 
-
 *   **Tier 1: Apex Wallet (Whales & VIPs) | ~56.6k Users | Avg TPV: $766.37**
     *   **Profile:** High-volume spenders mathematically isolated by top-tier transaction activity.
     *   **Business ROI:** Maximizes Customer Lifetime Value (LTV) by proactively unlocking premium, high-limit credit lines for the platform's most lucrative             demographic.
